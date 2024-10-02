@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producto 1 - Modista Artesanal</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <header class="bg-primary text-white py-4">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="m-0">Producto 1</h1>
+            </div>
+            <div>
+                <a href="index.html" class="text-white mr-3">Inicio</a>
+                <a href="cuenta.html" class="text-white mr-3">Mi cuenta</a>
+                <a href="carrito.html" class="text-white">Carrito</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-md-6">
+                <img src="https://via.placeholder.com/400" class="img-fluid" alt="Vestido Tejido a Mano">
+            </div>
+            <div class="col-md-6">
+                <h2>Vestido Tejido a Mano</h2>
+                <p>Este vestido está hecho a mano con materiales de alta calidad. Perfecto para cualquier ocasión especial, puede ser personalizado a tu gusto.</p>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <h3>Personaliza tu Vestido</h3>
+                <form id="customization-form">
+                    <div class="form-group">
+                        <label for="color">Color</label>
+                        <select class="form-control" id="color">
+                            <option>Rojo</option>
+                            <option>Azul</option>
+                            <option>Verde</option>
+                            <option>Negro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="size">Tamaño</label>
+                        <select class="form-control" id="size">
+                            <option>Pequeño</option>
+                            <option>Mediano</option>
+                            <option>Grande</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="text">Texto Personalizado</label>
+                        <input type="text" class="form-control" id="text" placeholder="Ingresa el texto">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addToCart()">Agregar al Carrito</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="confirmation-card" class="alert alert-success mt-4 d-none" role="alert">
+            ¡Producto agregado al carrito exitosamente!
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function addToCart() {
+            const color = document.getElementById('color').value;
+            const size = document.getElementById('size').value;
+            const text = document.getElementById('text').value;
+            const product = {
+                id: 1,
+                name: 'Vestido Tejido a Mano',
+                color: color,
+                size: size,
+                text: text
+            };
+            console.log('Producto agregado al carrito:', product);
+
+            document.getElementById('confirmation-card').classList.remove('d-none');
+
+            document.getElementById('customization-form').reset();
+        }
+    </script>
+</body>
+</html>

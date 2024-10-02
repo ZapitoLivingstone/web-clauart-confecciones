@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Pedidos</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <header class="bg-primary text-white py-4">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="m-0">Carrito de pedidos</h1>
+            </div>
+            <div>
+                <a href="index.html" class="text-white mr-3">Inicio</a>
+                <a href="cuenta.html" class="text-white mr-3">Mi cuenta</a>
+                <a href="carrito.html" class="text-white">Carrito</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-5">
+        <h2 class="mb-4">Tus Productos</h2>
+        <div class="list-group" id="cart-items">
+        </div>
+
+        <button class="btn btn-success btn-block mt-3" onclick="confirmOrder()">Confirmar Pedido</button>
+
+        <div id="order-notification" class="alert alert-success mt-4 d-none" role="alert">
+            ¡Tu pedido ha sido enviado a la modista!
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+
+        const cartItems = [
+            { id: 1, name: 'Vestido Tejido a Mano' },
+            { id: 2, name: 'Chaleco de Lana' }
+        ];
+
+        function renderCart() {
+            const cartItemsContainer = document.getElementById('cart-items');
+            cartItemsContainer.innerHTML = '';
+
+            cartItems.forEach(item => {
+                cartItemsContainer.innerHTML += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="mr-3">${item.name}</span>
+                        <div>
+                            <button class="btn btn-warning btn-sm" onclick="modifyItem(${item.id})">Modificar</button>
+                            <button class="btn btn-danger btn-sm" onclick="removeItem(${item.id})">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function modifyItem(id) {
+            window.location.href= "producto 1.html"
+        }
+
+        function removeItem(id) {
+            const index = cartItems.findIndex(item => item.id === id);
+            if (index !== -1) {
+                cartItems.splice(index, 1);
+                renderCart();
+            }
+        }
+
+        function confirmOrder() {
+            document.getElementById('order-notification').classList.remove('d-none');
+        }
+        
+        renderCart();
+    </script>
+</body>
+</html>
