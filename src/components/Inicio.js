@@ -14,7 +14,7 @@ const Inicio = () => {
           <div>
             <a href="/" className="text-white me-3">Inicio</a>
             <a href="/cuenta" className="text-white me-3">Mi cuenta</a>
-            <a href="/carrito" className="text-white">Carrito</a>
+            <a href="/Carrito" className="text-white">Carrito</a>
           </div>
         </div>
       </header>

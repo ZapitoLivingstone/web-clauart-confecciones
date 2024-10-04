@@ -2,8 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Inicio from './components/Inicio';
 import Contacto from './components/contacto';
-import Carrito from './components/carrito';
-import Cuenta from './components/cuenta';
+import Cuenta from './components/Cuenta';
+import Carrito from './components/Carrito';
 
 function App() {
   return (
@@ -11,8 +11,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Inicio />} />
         <Route path="/contacto" element={<Contacto />} />
-        <Route path="/carrito" element={<Carrito />} />
-        <Route path="/cuenta" element={<Cuenta />} />
+        <Route path="/Carrito" element={<Carrito />} />
+        <Route path="/Cuenta" element={<Cuenta />} />
       </Routes>
     </Router>
   );
