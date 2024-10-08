@@ -1,0 +1,10 @@
+.registro {
+    margin-top: 50px;
+    justify-content: center;
+    display:grid;
+    place-items: center;
+}
+
+.text-center {
+    margin-bottom: 28px;
+}
