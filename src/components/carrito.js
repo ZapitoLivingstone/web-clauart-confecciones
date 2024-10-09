@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 const Carrito = () => {
   //carrito con productos (simula datos)
   const [cartItems, setCartItems] = useState([
