@@ -1,74 +1,114 @@
 import React, { useState } from 'react';
-import '../styles/styleAuth.css'; // Importar el CSS
+import '../styles/styleAuth.css';
 
 const Registro = () => {
-  const [registerName, setRegisterName] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    return passwordRegex.test(password);
+  };
 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
-    if (registerPassword !== registerConfirmPassword) {
-      alert('Las contraseñas no coinciden');
-      return;
+    
+    let formErrors = {};
+
+    // Validacion de email
+    if (!email) {
+      formErrors.email = 'El correo electrónico es obligatorio.';
+    } else if (!validateEmail(email)) {
+      formErrors.email = 'El correo electrónico no es válido.';
     }
-    console.log('Registro:', { registerName, registerEmail, registerPassword });
+
+    // Validacion de contraseña
+    if (!password) {
+      formErrors.password = 'La contraseña es obligatoria.';
+    } else if (!validatePassword(password)) {
+      formErrors.password = 'La contraseña debe tener al menos 8 caracteres, una letra y un número.';
+    }
+
+    // Validación de confirmación de contraseña
+    if (password !== confirmPassword) {
+      formErrors.confirmPassword = 'Las contraseñas no coinciden.';
+    }
+
+    if (Object.keys(formErrors).length === 0) {
+      console.log('Registro exitoso:', { email, password });
+    } else {
+      setErrors(formErrors);
+    }
   };
 
   return (
-    <div className="container my-5">
-      <div className="col-md-6">
-        <h3 className="text-center">Registrarse</h3>
-        <form onSubmit={handleRegisterSubmit}>
-          <div className="form-group">
-            <label htmlFor="registerName">Nombre Completo</label>
-            <input
-              type="text"
-              className="form-control"
-              id="registerName"
-              placeholder="Ingrese su nombre completo"
-              value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
-            />
+    <>
+      <header className="bg-primary text-white py-4">
+        <div className="container d-flex justify-content-between align-items-center">
+          <div>
+            <h1 className="m-0">CLAUART Confecciones</h1>
+            <p className="m-0">Taller de confecciones de prendas de vestir</p>
           </div>
-          <div className="form-group">
-            <label htmlFor="registerEmail">Correo Electrónico</label>
-            <input
-              type="email"
-              className="form-control"
-              id="registerEmail"
-              placeholder="Ingrese su correo electrónico"
-              value={registerEmail}
-              onChange={(e) => setRegisterEmail(e.target.value)}
-            />
+          <div>
+            <a href="/" className="text-white me-3">Inicio</a>
+            <a href="/InicioSesion" className="text-white me-3">Mi cuenta</a>
+            <a href="/Carrito" className="text-white">Carrito</a>
           </div>
-          <div className="form-group">
-            <label htmlFor="registerPassword">Contraseña</label>
-            <input
-              type="password"
-              className="form-control"
-              id="registerPassword"
-              placeholder="Cree una contraseña"
-              value={registerPassword}
-              onChange={(e) => setRegisterPassword(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="registerConfirmPassword">Confirmar Contraseña</label>
-            <input
-              type="password"
-              className="form-control"
-              id="registerConfirmPassword"
-              placeholder="Confirme su contraseña"
-              value={registerConfirmPassword}
-              onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="btn btn-success btn-block">Registrarse</button>
-        </form>
+        </div>
+      </header>
+      
+      <div className="container my-5">
+        <div className="col-md-6 offset-md-3">
+          <h3 className="text-center">Registrarse</h3>
+          <form onSubmit={handleRegisterSubmit} noValidate>
+            <div className="form-group">
+              <label htmlFor="registerEmail">Correo Electrónico</label>
+              <input
+                type="email"
+                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                id="registerEmail"
+                placeholder="Ingrese su correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="registerPassword">Contraseña</label>
+              <input
+                type="password"
+                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                id="registerPassword"
+                placeholder="Ingrese su contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirmar Contraseña</label>
+              <input
+                type="password"
+                className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                id="confirmPassword"
+                placeholder="Confirme su contraseña"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            </div>
+            <button type="submit" className="btn btn-primary btn-block">Registrarse</button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

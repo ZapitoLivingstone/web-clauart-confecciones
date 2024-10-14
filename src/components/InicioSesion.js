@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import '../styles/styleAuth.css'; // Importar el CSS
-
+import '../styles/styleAuth.css';
+import { Link } from 'react-router-dom';
 const InicioSesion = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -56,7 +56,7 @@ const InicioSesion = () => {
               <span>¿Olvidó su contraseña?</span>
             </p>
             <p className="text-center mt-3">
-              ¿No tienes cuenta?<a href="/Registro" className="text-white">Regístrate aquí</a>
+              ¿No tienes cuenta? <Link to="/Registro" className="text-primary">Regístrate aquí</Link>
             </p>
           </form>
         </div>
