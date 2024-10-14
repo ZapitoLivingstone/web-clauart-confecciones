@@ -1,13 +1,39 @@
 import React, { useState } from 'react';
 import '../styles/styleAuth.css';
 import { Link } from 'react-router-dom';
+
 const InicioSesion = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    console.log('Login:', { loginEmail, loginPassword });
+    
+    let formErrors = {};
+
+    // Validacion de email
+    if (!loginEmail) {
+      formErrors.email = 'El correo electrónico es obligatorio.';
+    } else if (!validateEmail(loginEmail)) {
+      formErrors.email = 'El correo electrónico no es válido.';
+    }
+
+    // Validacion de contraseña
+    if (!loginPassword) {
+      formErrors.password = 'La contraseña es obligatoria.';
+    }
+
+    if (Object.keys(formErrors).length === 0) {
+      console.log('Login exitoso:', { loginEmail, loginPassword });
+    } else {
+      setErrors(formErrors);
+    }
   };
 
   return (
@@ -26,34 +52,36 @@ const InicioSesion = () => {
         </div>
       </header>
       <div className="container my-5">
-        <div className="col-md-6 mb-4">
+        <div className="col-md-6 offset-md-3">
           <h3 className="text-center">Iniciar Sesión</h3>
-          <form onSubmit={handleLoginSubmit}>
+          <form onSubmit={handleLoginSubmit} noValidate>
             <div className="form-group">
               <label htmlFor="loginEmail">Correo Electrónico</label>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                 id="loginEmail"
                 placeholder="Ingrese su correo electrónico"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
               />
+              {errors.email && <div className="invalid-feedback">{errors.email}</div>}
             </div>
             <div className="form-group">
               <label htmlFor="loginPassword">Contraseña</label>
               <input
                 type="password"
-                className="form-control"
+                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                 id="loginPassword"
                 placeholder="Ingrese su contraseña"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
               />
+              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
             </div>
             <button type="submit" className="btn btn-primary btn-block">Iniciar Sesión</button>
             <p className="text-center mt-3">
-              <span>¿Olvidó su contraseña?</span>
+              <Link to="/OlvidoContrasena" className="text-primary">¿Olvidó su contraseña?</Link>
             </p>
             <p className="text-center mt-3">
               ¿No tienes cuenta? <Link to="/Registro" className="text-primary">Regístrate aquí</Link>
