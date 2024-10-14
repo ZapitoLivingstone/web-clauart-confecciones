@@ -1,0 +1,47 @@
+body {
+    background-color: #f8f9fa; /* Color de fondo */
+  }
+  
+  header {
+    background-color: #007bff; /* Color de fondo del encabezado */
+    color: white; /* Color del texto */
+  }
+  
+  header h1 {
+    margin-bottom: 0.5rem; /* Espaciado debajo del título */
+  }
+  
+  header p {
+    margin-bottom: 0; /* Sin margen debajo del párrafo */
+  }
+  
+  .container {
+    margin-top: 20px; /* Espaciado superior del contenedor */
+  }
+  
+  h3 {
+    margin-bottom: 20px; /* Espaciado inferior para los encabezados */
+  }
+  
+  .form-group {
+    margin-bottom: 15px; /* Espaciado inferior entre los campos de formulario */
+  }
+  
+  .form-control {
+    border-radius: 5px; /* Bordes redondeados para los campos de entrada */
+    padding: 10px; /* Espaciado interno */
+  }
+  
+  .btn {
+    border-radius: 5px; /* Bordes redondeados para los botones */
+    padding: 10px; /* Espaciado interno */
+  }
+  
+  .text-center {
+    text-align: center; /* Alinear texto al centro */
+  }
+  
+  .mt-3 {
+    margin-top: 1rem; /* Espaciado superior para los elementos con clase mt-3 */
+  }
+  
