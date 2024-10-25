@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { auth, db } from '../firebase'; // Importamos la configuración de Firebase
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, addDoc } from 'firebase/firestore';
 import '../styles/styleAuth.css';
 
 const Registro = () => {
@@ -6,6 +9,7 @@ const Registro = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,7 +21,7 @@ const Registro = () => {
     return passwordRegex.test(password);
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async(e) => {
     e.preventDefault();
     
     let formErrors = {};
@@ -45,6 +49,28 @@ const Registro = () => {
       console.log('Registro exitoso:', { email, password });
     } else {
       setErrors(formErrors);
+    }
+    
+    setLoading(true);
+
+    try {
+      // Registro en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Agregar información del usuario en Firestore
+      await addDoc(collection(db, 'users'), {
+        uid: user.uid,
+        email: user.email,
+        fecha_registro: new Date(),
+        rol: 'usuario'
+      });
+
+      console.log('Registro exitoso:', user);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error en el registro:', error);
+      setLoading(false);
     }
   };
 
@@ -104,7 +130,9 @@ const Registro = () => {
               />
               {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
             </div>
-            <button type="submit" className="btn btn-primary btn-block">Registrarse</button>
+            <button type="submit" className="btn btn-primary btn-block">
+            {loading ? 'Registrando...' : 'Registrarse'}
+            </button>
           </form>
         </div>
       </div>
