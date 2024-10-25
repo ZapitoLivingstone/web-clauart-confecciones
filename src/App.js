@@ -5,6 +5,7 @@ import Contacto from './components/contacto';
 import InicioSesion from './components/InicioSesion';
 import Registro from './components/Registro';
 import Carrito from './components/Carrito';
+import DetalleProducto from './components/DetalleProducto';
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/Carrito" element={<Carrito />} />
         <Route path="/InicioSesion" element={<InicioSesion />} />
-        <Route path="/Registro" element={<Registro />} /> {/* Cambiado component a element */}
+        <Route path="/Registro" element={<Registro />} /> 
+        <Route path="/DetalleProducto" element={<DetalleProducto />} />
       </Routes>
     </Router>
   );

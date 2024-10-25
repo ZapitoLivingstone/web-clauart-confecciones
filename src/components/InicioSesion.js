@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { FaGoogle } from 'react-icons/fa';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/styleAuth.css';
 
 const InicioSesion = () => {
@@ -10,6 +10,7 @@ const InicioSesion = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,6 +48,9 @@ const InicioSesion = () => {
       await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       console.log('Inicio de sesión exitoso');
       setLoading(false);
+
+      // Redirige al inicio después de iniciar sesión
+      navigate('/');
     } catch (error) {
       console.error('Error en el inicio de sesión:', error);
       setLoading(false);
@@ -74,6 +78,7 @@ const InicioSesion = () => {
         console.log('Inicio de sesión con Google exitoso');
       }
       setLoading(false);
+      navigate('/');
     } catch (error) {
       console.error('Error en el inicio de sesión con Google:', error);
       setLoading(false);

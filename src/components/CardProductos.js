@@ -25,7 +25,7 @@ const CardProductos = () => {
             <div className="card-body">
               <h5 className="card-title">{producto.titulo}</h5>
               <p className="card-text">{producto.descripcion}</p>
-              <a href={`/producto/${producto.id}`} className="btn btn-info">Leer más</a>
+              <a href={`/DetalleProducto`} className="btn btn-info">Leer más</a>
             </div>
           </div>
         </div>
