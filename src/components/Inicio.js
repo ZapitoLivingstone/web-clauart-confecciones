@@ -41,7 +41,7 @@ const Inicio = () => {
             <a href="/" className="text-white me-3">Inicio</a>
             <a href="/InicioSesion" className="text-white me-3">Mi cuenta</a>
             <a href="/Carrito" className="text-white me-3">Carrito</a>
-            {isAdmin && <a href="/admin-panel" className="text-white">Panel de Admin</a>}
+            {isAdmin && <a href="/PanelAdmin" className="text-white">Panel de Admin</a>}
           </div>
         </div>
       </header>

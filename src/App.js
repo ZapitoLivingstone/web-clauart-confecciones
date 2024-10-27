@@ -6,6 +6,7 @@ import InicioSesion from './components/InicioSesion';
 import Registro from './components/Registro';
 import Carrito from './components/Carrito';
 import DetalleProducto from './components/DetalleProducto';
+import PanelAdmin from './components/PanelAdmin';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/InicioSesion" element={<InicioSesion />} />
         <Route path="/Registro" element={<Registro />} /> 
         <Route path="/DetalleProducto" element={<DetalleProducto />} />
+        <Route path="/PanelAdmin" element={<PanelAdmin />} />
       </Routes>
     </Router>
   );
