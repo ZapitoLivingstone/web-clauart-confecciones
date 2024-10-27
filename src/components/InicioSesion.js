@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import { FaGoogle } from 'react-icons/fa';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import '../styles/styleAuth.css';
 
 const InicioSesion = () => {
@@ -11,6 +12,7 @@ const InicioSesion = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const firestore = getFirestore();
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,25 +37,36 @@ const InicioSesion = () => {
     }
 
     if (Object.keys(formErrors).length === 0) {
-      console.log('Login exitoso:', { loginEmail, loginPassword });
+      setLoading(true);
+      try {
+        // Inicio de sesión con email y contraseña
+        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+        const user = userCredential.user;
+        
+        const userRef = doc(firestore, "users", user.uid);
+        const userSnapshot = await getDoc(userRef);
+        
+        if (!userSnapshot.exists()) {
+          await setDoc(userRef, {
+            email: user.email,
+            displayName: user.displayName || loginEmail, // Puedes usar el email como displayName si no hay otro
+            createdAt: new Date(),
+          });
+          console.log('Nuevo usuario creado en Firestore.');
+        } else {
+          console.log('Usuario ya registrado en Firestore.');
+        }
+        
+        console.log('Inicio de sesión exitoso');
+        setLoading(false);
+        navigate('/'); // Redirige al inicio después de iniciar sesión
+      } catch (error) {
+        console.error('Error en el inicio de sesión:', error);
+        setErrors({ general: 'Error en el inicio de sesión, por favor verifique sus credenciales.' });
+        setLoading(false);
+      }
     } else {
       setErrors(formErrors);
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Inicio de sesión con email y contraseña
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      console.log('Inicio de sesión exitoso');
-      setLoading(false);
-
-      // Redirige al inicio después de iniciar sesión
-      navigate('/');
-    } catch (error) {
-      console.error('Error en el inicio de sesión:', error);
-      setLoading(false);
     }
   };
 
@@ -61,22 +74,32 @@ const InicioSesion = () => {
   const provider = new GoogleAuthProvider();
 
   // Manejar el inicio de sesión con Google
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
-      // Verificar si el usuario ya tiene un método de inicio de sesión
-      const methods = await fetchSignInMethodsForEmail(auth, user.email);
-
-      if (methods.length === 0) {
-        // Usuario nuevo, puedes crear una cuenta
-        console.log('Nuevo usuario, creando cuenta...');
+      const userRef = doc(firestore, "users", user.uid); // Usar el uid como ID del documento
+      const userSnapshot = await getDoc(userRef);
+  
+      if (!userSnapshot.exists()) {
+        // Si el documento no existe, crear el perfil del usuario
+        console.log("Nuevo usuario detectado, creando documento en Firestore...");
+        await setDoc(userRef, {
+          email: user.email,
+          nombre: user.displayName,
+          fecha_registro: new Date(),
+          metodo_registro: "google",
+          rol: "usuario", // o el rol que necesites
+          telefono: "",
+          direccion: ""
+        });
+        console.log('Nuevo usuario creado en Firestore.');
       } else {
-        // Usuario ya registrado
-        console.log('Inicio de sesión con Google exitoso');
+        console.log('Usuario ya registrado en Firestore.');
       }
+  
       setLoading(false);
       navigate('/');
     } catch (error) {
@@ -128,6 +151,7 @@ const InicioSesion = () => {
               />
               {errors.password && <div className="invalid-feedback">{errors.password}</div>}
             </div>
+            {errors.general && <div className="alert alert-danger">{errors.general}</div>}
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>

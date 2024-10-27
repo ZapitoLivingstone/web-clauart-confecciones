@@ -8,17 +8,22 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const Inicio = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
+
   useEffect(() => {
     const fetchUserRole = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setIsAdmin(userData.rol === 'admin');
+      // Espera a que Firebase cargue el estado de autenticación
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsAdmin(userData.rol === 'admin');
+          }
+        } else {
+          setIsAdmin(false); // Si no hay usuario logueado, no mostrar el enlace
         }
-      }
+      });
     };
 
     fetchUserRole();

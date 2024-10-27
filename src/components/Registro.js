@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase'; // Importamos la configuración de Firebase
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDoc, doc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import '../styles/styleAuth.css';
 
 const Registro = () => {
@@ -10,6 +11,7 @@ const Registro = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -21,53 +23,64 @@ const Registro = () => {
     return passwordRegex.test(password);
   };
 
-  const handleRegisterSubmit = async(e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     
     let formErrors = {};
 
-    // Validacion de email
     if (!email) {
       formErrors.email = 'El correo electrónico es obligatorio.';
     } else if (!validateEmail(email)) {
       formErrors.email = 'El correo electrónico no es válido.';
     }
 
-    // Validacion de contraseña
     if (!password) {
       formErrors.password = 'La contraseña es obligatoria.';
     } else if (!validatePassword(password)) {
       formErrors.password = 'La contraseña debe tener al menos 8 caracteres, una letra y un número.';
     }
 
-    // Validación de confirmación de contraseña
     if (password !== confirmPassword) {
       formErrors.confirmPassword = 'Las contraseñas no coinciden.';
     }
 
-    if (Object.keys(formErrors).length === 0) {
-      console.log('Registro exitoso:', { email, password });
-    } else {
+    if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
+      return;
     }
-    
+
     setLoading(true);
 
     try {
-      // Registro en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Agregar información del usuario en Firestore
+      // Verificar si ya existe un administrador en la base de datos
+      const adminQuery = await getDoc(doc(db, 'admin', 'uniqueAdminDoc'));
+      
+      let rol = 'usuario';
+      if (!adminQuery.exists()) {
+        rol = 'admin'; // Si no hay administrador, el primer usuario registrado será el administrador
+        await addDoc(collection(db, 'admin'), { uid: user.uid }); // Guarda un marcador de administrador
+      }
+
+      // Guardar usuario en la colección 'users'
       await addDoc(collection(db, 'users'), {
         uid: user.uid,
         email: user.email,
         fecha_registro: new Date(),
-        rol: 'usuario'
+        rol: rol
       });
 
       console.log('Registro exitoso:', user);
       setLoading(false);
+
+      // Redirigir según el rol
+      if (rol === 'admin') {
+        navigate('/admin'); // Redirige a la vista de administrador
+      } else {
+        navigate('/user'); // Redirige a la vista de usuario
+      }
     } catch (error) {
       console.error('Error en el registro:', error);
       setLoading(false);
@@ -131,7 +144,7 @@ const Registro = () => {
               {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
             </div>
             <button type="submit" className="btn btn-primary btn-block">
-            {loading ? 'Registrando...' : 'Registrarse'}
+              {loading ? 'Registrando...' : 'Registrarse'}
             </button>
           </form>
         </div>
