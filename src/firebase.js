@@ -1,3 +1,4 @@
+// firebase.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -15,10 +16,9 @@ const firebaseConfig = {
 // Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa Firestore
+// Inicializa Firestore y Auth
 const db = getFirestore(app);
-
-// Inicializa Firebase Auth
 const auth = getAuth(app);
 
+// Exporta db y auth como exportaciones nombradas
 export { db, auth };
