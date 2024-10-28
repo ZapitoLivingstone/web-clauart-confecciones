@@ -30,17 +30,22 @@ const GestionarCategorias = () => {
 
   const agregarCategoria = async (e) => {
     e.preventDefault();
-    try {
-      await addDoc(collection(db, 'categorias'), {
-        nombre: nuevaCategoria.nombre,
-        descripcion: nuevaCategoria.descripcion,
-      });
-      setNuevaCategoria({ nombre: '', descripcion: '' });
-      cargarCategorias();
-    } catch (error) {
-      console.error('Error al agregar categoría:', error);
+    if (nuevaCategoria.nombre && nuevaCategoria.descripcion) {
+      try {
+        await addDoc(collection(db, 'categorias'), {
+          nombre: nuevaCategoria.nombre,
+          descripcion: nuevaCategoria.descripcion,
+        });
+        setNuevaCategoria({ nombre: '', descripcion: '' });
+        cargarCategorias();
+      } catch (error) {
+        console.error('Error al agregar categoría:', error);
+      }
+    } else {
+      console.error('Por favor completa todos los campos.');
     }
   };
+  
 
   const eliminarCategoria = async () => {
     try {

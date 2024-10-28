@@ -6,8 +6,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]); // Nuevo estado para las categorías
   const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '' });
-  const [imagen, setImagen] = useState(null); // Estado para manejar la imagen
+  const [imagen, setImagen] = useState(null);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
@@ -19,8 +20,16 @@ const GestionarProductos = () => {
     setProductos(listaProductos);
   };
 
+  // Cargar categorías desde Firestore
+  const cargarCategorias = async () => {
+    const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
+    const listaCategorias = categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setCategorias(listaCategorias);
+  };
+
   useEffect(() => {
     cargarProductos();
+    cargarCategorias(); // Llamar a cargarCategorias al iniciar el componente
   }, []);
 
   const agregarProducto = async (e) => {
@@ -36,7 +45,7 @@ const GestionarProductos = () => {
 
     await addDoc(collection(db, 'productos'), { ...nuevoProducto, img_url: imgUrl });
     setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '' });
-    setImagen(null); // Limpiar el archivo de imagen
+    setImagen(null);
     cargarProductos();
   };
 
@@ -84,9 +93,9 @@ const GestionarProductos = () => {
           <Form.Label>Categoría</Form.Label>
           <Form.Control as="select" value={nuevoProducto.categoria} onChange={(e) => setNuevoProducto({ ...nuevoProducto, categoria: e.target.value })}>
             <option>Seleccionar</option>
-            <option value="ropa">Ropa</option>
-            <option value="zapatos">Zapatos</option>
-            <option value="tazas">Tazas</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.nombre}>{categoria.nombre}</option>
+            ))}
           </Form.Control>
         </Form.Group>
         <Form.Group>

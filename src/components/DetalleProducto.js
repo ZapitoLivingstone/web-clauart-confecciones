@@ -1,121 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore'; 
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import '../styles/style.css';
 
 const DetalleProducto = () => {
   const { productoId } = useParams(); 
   const [producto, setProducto] = useState(null);
-  const [color, setColor] = useState('');
-  const [size, setSize] = useState('');
-  const [text, setText] = useState('');
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProducto = async () => {
-      try {
-        const docRef = doc(db, 'productos', productoId);
-        const docSnap = await getDoc(docRef);
+      if (!productoId) {
+        console.error("ID del producto es undefined");
+        setLoading(false);
+        return;
+      }
 
-        if (docSnap.exists()) {
-          setProducto(docSnap.data());
+      try {
+        const productoRef = doc(db, 'productos', productoId);
+        const productoSnapshot = await getDoc(productoRef);
+
+        if (productoSnapshot.exists()) {
+          const data = productoSnapshot.data();
+          console.log("Datos del producto:", data); // Verifica los datos
+          
+          // Usar img_url directamente
+          setProducto({ id: productoSnapshot.id, ...data });
         } else {
-          console.log("El producto no existe");
+          console.error("El producto no existe");
+          setError("El producto no existe");
         }
       } catch (error) {
         console.error("Error al obtener el producto:", error);
+        setError("Error al obtener el producto");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProducto();
   }, [productoId]);
 
-  const handleAddToCart = () => {
-    const customProduct = {
-      id: productoId,
-      name: producto?.titulo,
-      color: color,
-      size: size,
-      text: text,
-    };
+  if (loading) {
+    return <div>Cargando producto...</div>;
+  }
 
-    console.log('Producto agregado al carrito:', customProduct);
-    setShowConfirmation(true);
+  if (error) {
+    return <div>{error}</div>;
+  }
 
-    setColor('');
-    setSize('');
-    setText('');
-  };
-
-  if (!producto) return <p>Cargando producto...</p>;
 
   return (
     <div className="container my-5">
-      <header className="bg-primary text-white py-4">
-        <div className="container d-flex justify-content-between align-items-center">
-          <div>
-            <h1 className="m-0">{producto.titulo}</h1>
+      <h1>Detalles del Producto</h1>
+      {producto ? (
+        <div className="row">
+          <div className="col-md-6">
+          <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
           </div>
-          <div>
-            <a href="/" className="text-white mr-3">Inicio</a>
-            <a href="/cuenta" className="text-white mr-3">Mi cuenta</a>
-            <a href="/carrito" className="text-white">Carrito</a>
+          <div className="col-md-6">
+            <h2>{producto.nombre}</h2>
+            <p>{producto.descripcion}</p>
+            <p>Precio: ${producto.precio}</p>
+            <div className="mt-4">
+              <h3>Personaliza tu Producto</h3>
+              <form id="customization-form">
+                <div className="form-group">
+                  <label htmlFor="color">Color</label>
+                  <select className="form-control" id="color">
+                    <option>Rojo</option>
+                    <option>Azul</option>
+                    <option>Verde</option>
+                    <option>Negro</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="size">Tamaño</label>
+                  <select className="form-control" id="size">
+                    <option>Pequeño</option>
+                    <option>Mediano</option>
+                    <option>Grande</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="text">Texto Personalizado</label>
+                  <input type="text" className="form-control" id="text" placeholder="Ingresa el texto" />
+                </div>
+                <button type="button" className="btn btn-primary" onClick={() => alert('Producto agregado al carrito')}>Agregar al Carrito</button>
+              </form>
+            </div>
           </div>
         </div>
-      </header>
-
-      <div className="row mt-5">
-        <div className="col-md-6">
-          <img src={producto.imagen_url || 'https://via.placeholder.com/400'} className="img-fluid" alt={producto.titulo} />
-        </div>
-        <div className="col-md-6">
-          <h2>{producto.titulo}</h2>
-          <p>{producto.descripcion}</p>
-
-          <h3>Personaliza tu {producto.titulo}</h3>
-          <form>
-            <div className="form-group">
-              <label htmlFor="color">Color</label>
-              <select className="form-control" id="color" value={color} onChange={(e) => setColor(e.target.value)}>
-                <option value="">Selecciona un color</option>
-                <option>Rojo</option>
-                <option>Azul</option>
-                <option>Verde</option>
-                <option>Negro</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="size">Tamaño</label>
-              <select className="form-control" id="size" value={size} onChange={(e) => setSize(e.target.value)}>
-                <option value="">Selecciona un tamaño</option>
-                <option>Pequeño</option>
-                <option>Mediano</option>
-                <option>Grande</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="text">Texto Personalizado</label>
-              <input
-                type="text"
-                className="form-control"
-                id="text"
-                placeholder="Ingresa el texto"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-            </div>
-            <button type="button" className="btn btn-primary" onClick={handleAddToCart}>
-              Agregar al Carrito
-            </button>
-          </form>
-          {showConfirmation && (
-            <div className="alert alert-success mt-4" role="alert">
-              ¡Producto agregado al carrito exitosamente!
-            </div>
-          )}
-        </div>
-      </div>
+      ) : (
+        <p>No se encontró información del producto.</p>
+      )}
     </div>
   );
 };
