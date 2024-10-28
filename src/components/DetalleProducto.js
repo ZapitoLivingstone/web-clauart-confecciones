@@ -12,7 +12,6 @@ const DetalleProducto = () => {
   const [text, setText] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Fetch del producto desde Firestore
   useEffect(() => {
     const fetchProducto = async () => {
       try {
@@ -32,7 +31,6 @@ const DetalleProducto = () => {
     fetchProducto();
   }, [productoId]);
 
-  // Función para agregar el producto personalizado al carrito
   const handleAddToCart = () => {
     const customProduct = {
       id: productoId,
@@ -45,7 +43,6 @@ const DetalleProducto = () => {
     console.log('Producto agregado al carrito:', customProduct);
     setShowConfirmation(true);
 
-    // Reset del formulario después de añadir el producto al carrito
     setColor('');
     setSize('');
     setText('');
