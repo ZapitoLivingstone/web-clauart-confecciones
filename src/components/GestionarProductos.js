@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Table, Modal } from 'react-bootstrap';
+import { Button, Form, Table } from 'react-bootstrap';
 import { db, storage } from '../firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import ModalGenerico from './ModalGenerico';
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
   const [imagen, setImagen] = useState(null);
-  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
-  const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ show: false, mode: '', producto: null });
 
   useEffect(() => {
     cargarProductos();
@@ -20,14 +19,12 @@ const GestionarProductos = () => {
 
   const cargarProductos = async () => {
     const productosSnapshot = await getDocs(collection(db, 'productos'));
-    const listaProductos = productosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setProductos(listaProductos);
+    setProductos(productosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
   const cargarCategorias = async () => {
     const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
-    const listaCategorias = categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setCategorias(listaCategorias);
+    setCategorias(categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
   const agregarProducto = async (e) => {
@@ -47,16 +44,15 @@ const GestionarProductos = () => {
   };
 
   const eliminarProducto = async () => {
-    if (productoSeleccionado) {
-      await deleteDoc(doc(db, 'productos', productoSeleccionado.id));
-      setMostrarModalEliminar(false);
+    if (modalConfig.producto) {
+      await deleteDoc(doc(db, 'productos', modalConfig.producto.id));
+      setModalConfig({ show: false, mode: '', producto: null });
       cargarProductos();
-      setProductoSeleccionado(null);
     }
   };
 
   const actualizarProducto = async () => {
-    let imgUrl = productoSeleccionado.img_url;
+    let imgUrl = modalConfig.producto.img_url;
 
     if (imagen) {
       const imgRef = ref(storage, `productos/${imagen.name}`);
@@ -64,29 +60,17 @@ const GestionarProductos = () => {
       imgUrl = await getDownloadURL(imgRef);
     }
 
-    await updateDoc(doc(db, 'productos', productoSeleccionado.id), { ...productoSeleccionado, img_url: imgUrl });
-    setMostrarModalEditar(false);
+    await updateDoc(doc(db, 'productos', modalConfig.producto.id), { ...modalConfig.producto, img_url: imgUrl });
+    setModalConfig({ show: false, mode: '', producto: null });
     cargarProductos();
   };
 
-  const handleColorChange = (e) => {
-    const selectedColor = e.target.value;
-    setNuevoProducto((prev) => ({
-      ...prev,
-      colores: prev.colores.includes(selectedColor)
-        ? prev.colores.filter((color) => color !== selectedColor)
-        : [...prev.colores, selectedColor],
-    }));
+  const handleEdit = (producto) => {
+    setModalConfig({ show: true, mode: 'edit', producto });
   };
 
-  const handleTallaChange = (e) => {
-    const selectedTalla = e.target.value;
-    setNuevoProducto((prev) => ({
-      ...prev,
-      tallas: prev.tallas.includes(selectedTalla)
-        ? prev.tallas.filter((talla) => talla !== selectedTalla)
-        : [...prev.tallas, selectedTalla],
-    }));
+  const handleDelete = (producto) => {
+    setModalConfig({ show: true, mode: 'delete', producto });
   };
 
   return (
@@ -115,19 +99,6 @@ const GestionarProductos = () => {
           </Form.Control>
         </Form.Group>
         <Form.Group>
-          <Form.Label>Colores</Form.Label>
-          <Form.Check type="checkbox" label="Rojo" value="Rojo" onChange={handleColorChange} />
-          <Form.Check type="checkbox" label="Azul" value="Azul" onChange={handleColorChange} />
-          <Form.Check type="checkbox" label="Verde" value="Verde" onChange={handleColorChange} />
-          <Form.Check type="checkbox" label="Negro" value="Negro" onChange={handleColorChange} />
-        </Form.Group>
-        <Form.Group>
-          <Form.Label>Tallas</Form.Label>
-          <Form.Check type="checkbox" label="Pequeño" value="Pequeño" onChange={handleTallaChange} />
-          <Form.Check type="checkbox" label="Mediano" value="Mediano" onChange={handleTallaChange} />
-          <Form.Check type="checkbox" label="Grande" value="Grande" onChange={handleTallaChange} />
-        </Form.Group>
-        <Form.Group>
           <Form.Label>Imagen</Form.Label>
           <Form.Control type="file" onChange={(e) => setImagen(e.target.files[0])} />
         </Form.Group>
@@ -136,77 +107,61 @@ const GestionarProductos = () => {
 
       <h3>Lista de Productos</h3>
       <Table striped bordered hover>
-  <thead>
-    <tr>
-      <th>Nombre</th>
-      <th>Descripción</th>
-      <th>Precio</th>
-      <th>Colores</th>
-      <th>Tallas</th>
-      <th>Imagen</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    {productos.map((producto) => (
-      <tr key={producto.id}>
-        <td>{producto.nombre}</td>
-        <td>{producto.descripcion}</td>
-        <td>{producto.precio}</td>
-        <td>{Array.isArray(producto.colores) ? producto.colores.join(", ") : "N/A"}</td>
-        <td>{Array.isArray(producto.tallas) ? producto.tallas.join(", ") : "N/A"}</td>
-        <td>
-          <img src={producto.img_url} alt={producto.nombre} style={{ width: '50px', height: '50px' }} />
-        </td>
-        <td>
-          <Button size="sm" variant="warning" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEditar(true); }}>Editar</Button>{' '}
-          <Button size="sm" variant="danger" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEliminar(true); }}>Eliminar</Button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</Table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {productos.map((producto) => (
+            <tr key={producto.id}>
+              <td>{producto.nombre}</td>
+              <td>{producto.descripcion}</td>
+              <td>{producto.precio}</td>
+              <td><img src={producto.img_url} alt={producto.nombre} style={{ width: '50px', height: '50px' }} /></td>
+              <td>
+                <Button size="sm" variant="warning" onClick={() => handleEdit(producto)}>Editar</Button>{' '}
+                <Button size="sm" variant="danger" onClick={() => handleDelete(producto)}>Eliminar</Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
 
-      {/* Modal para editar producto */}
-      <Modal show={mostrarModalEditar} onHide={() => setMostrarModalEditar(false)}>
-        <Modal.Header closeButton><Modal.Title>Editar Producto</Modal.Title></Modal.Header>
-        <Modal.Body>
+      <ModalGenerico
+        show={modalConfig.show}
+        handleClose={() => setModalConfig({ show: false, mode: '', producto: null })}
+        title={modalConfig.mode === 'edit' ? 'Editar Producto' : 'Eliminar Producto'}
+        handleConfirm={modalConfig.mode === 'edit' ? actualizarProducto : eliminarProducto}
+        confirmText={modalConfig.mode === 'edit' ? 'Guardar Cambios' : 'Eliminar'}
+      >
+        {modalConfig.mode === 'edit' ? (
           <Form>
             <Form.Group>
               <Form.Label>Nombre</Form.Label>
-              <Form.Control type="text" value={productoSeleccionado?.nombre || ''} onChange={(e) => setProductoSeleccionado({ ...productoSeleccionado, nombre: e.target.value })} />
+              <Form.Control type="text" value={modalConfig.producto?.nombre || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, nombre: e.target.value } })} />
             </Form.Group>
             <Form.Group>
               <Form.Label>Descripción</Form.Label>
-              <Form.Control as="textarea" value={productoSeleccionado?.descripcion || ''} onChange={(e) => setProductoSeleccionado({ ...productoSeleccionado, descripcion: e.target.value })} />
+              <Form.Control as="textarea" value={modalConfig.producto?.descripcion || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, descripcion: e.target.value } })} />
             </Form.Group>
             <Form.Group>
               <Form.Label>Precio</Form.Label>
-              <Form.Control type="number" value={productoSeleccionado?.precio || ''} onChange={(e) => setProductoSeleccionado({ ...productoSeleccionado, precio: e.target.value })} />
+              <Form.Control type="number" value={modalConfig.producto?.precio || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, precio: e.target.value } })} />
             </Form.Group>
             <Form.Group>
               <Form.Label>Imagen</Form.Label>
               <Form.Control type="file" onChange={(e) => setImagen(e.target.files[0])} />
             </Form.Group>
           </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setMostrarModalEditar(false)}>Cancelar</Button>
-          <Button variant="primary" onClick={actualizarProducto}>Guardar Cambios</Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal para confirmar eliminación */}
-      <Modal show={mostrarModalEliminar} onHide={() => setMostrarModalEliminar(false)}>
-        <Modal.Header closeButton><Modal.Title>Eliminar Producto</Modal.Title></Modal.Header>
-        <Modal.Body>
+        ) : (
           <p>¿Estás seguro de que deseas eliminar este producto?</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setMostrarModalEliminar(false)}>Cancelar</Button>
-          <Button variant="danger" onClick={eliminarProducto}>Eliminar</Button>
-        </Modal.Footer>
-      </Modal>
+        )}
+      </ModalGenerico>
     </div>
   );
 };

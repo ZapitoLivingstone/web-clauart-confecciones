@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore'; 
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; 
 import { db } from '../firebase';
 
 const DetalleProducto = () => {
@@ -8,6 +8,9 @@ const DetalleProducto = () => {
   const [producto, setProducto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [color, setColor] = useState('');
+  const [size, setSize] = useState('');
+  const [customText, setCustomText] = useState('');
 
   useEffect(() => {
     const fetchProducto = async () => {
@@ -23,9 +26,6 @@ const DetalleProducto = () => {
 
         if (productoSnapshot.exists()) {
           const data = productoSnapshot.data();
-          console.log("Datos del producto:", data); // Verifica los datos
-          
-          // Usar img_url directamente
           setProducto({ id: productoSnapshot.id, ...data });
         } else {
           console.error("El producto no existe");
@@ -42,14 +42,27 @@ const DetalleProducto = () => {
     fetchProducto();
   }, [productoId]);
 
-  if (loading) {
-    return <div>Cargando producto...</div>;
-  }
+  const agregarAlCarrito = async () => {
+    const productoPersonalizado = {
+      productoId: producto.id,
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      precio: producto.precio,
+      color: color,
+      size: size,
+      customText: customText,
+    };
 
-  if (error) {
-    return <div>{error}</div>;
-  }
+    try {
+      await addDoc(collection(db, 'carrito'), productoPersonalizado);
+      alert('Producto agregado al carrito');
+    } catch (error) {
+      console.error("Error al agregar al carrito:", error);
+    }
+  };
 
+  if (loading) return <div>Cargando producto...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="container my-5">
@@ -57,7 +70,7 @@ const DetalleProducto = () => {
       {producto ? (
         <div className="row">
           <div className="col-md-6">
-          <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
+            <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
           </div>
           <div className="col-md-6">
             <h2>{producto.nombre}</h2>
@@ -68,7 +81,8 @@ const DetalleProducto = () => {
               <form id="customization-form">
                 <div className="form-group">
                   <label htmlFor="color">Color</label>
-                  <select className="form-control" id="color">
+                  <select className="form-control" id="color" value={color} onChange={(e) => setColor(e.target.value)}>
+                    <option value="">Selecciona un color</option>
                     <option>Rojo</option>
                     <option>Azul</option>
                     <option>Verde</option>
@@ -77,7 +91,8 @@ const DetalleProducto = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="size">Tamaño</label>
-                  <select className="form-control" id="size">
+                  <select className="form-control" id="size" value={size} onChange={(e) => setSize(e.target.value)}>
+                    <option value="">Selecciona un tamaño</option>
                     <option>Pequeño</option>
                     <option>Mediano</option>
                     <option>Grande</option>
@@ -85,9 +100,9 @@ const DetalleProducto = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="text">Texto Personalizado</label>
-                  <input type="text" className="form-control" id="text" placeholder="Ingresa el texto" />
+                  <input type="text" className="form-control" id="text" placeholder="Ingresa el texto" value={customText} onChange={(e) => setCustomText(e.target.value)} />
                 </div>
-                <button type="button" className="btn btn-primary" onClick={() => alert('Producto agregado al carrito')}>Agregar al Carrito</button>
+                <button type="button" className="btn btn-primary mt-3" onClick={agregarAlCarrito}>Agregar al Carrito</button>
               </form>
             </div>
           </div>

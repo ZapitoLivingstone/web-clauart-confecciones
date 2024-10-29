@@ -1,62 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import Header from './Header';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import 'bootstrap/dist/css/bootstrap.min.css';
-const Carrito = () => {
-  //carrito con productos (simula datos)
-  const [cartItems, setCartItems] = useState([
-    { id: 1, name: 'Vestido Tejido a Mano' },
-    { id: 2, name: 'Chaleco de Lana' },
-  ]);
 
+const Carrito = () => {
+  const [cartItems, setCartItems] = useState([]);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
 
-  // carrito de productos
-  const renderCart = () => {
-    return cartItems.map(item => (
-      <div className="list-group-item d-flex justify-content-between align-items-center" key={item.id}>
-        <span className="mr-3">{item.name}</span>
-        <div>
-          <button className="btn btn-warning btn-sm" onClick={() => modifyItem(item.id)}>Modificar</button>
-          <button className="btn btn-danger btn-sm" onClick={() => removeItem(item.id)}>Eliminar</button>
-        </div>
-      </div>
-    ));
+  const cargarCarrito = async () => {
+    const carritoSnapshot = await getDocs(collection(db, 'carrito'));
+    const items = carritoSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setCartItems(items);
   };
 
-  //modificar un producto
-  const modifyItem = (id) => {
-    // Lógica para redirigir o modificar (puede ajustarse según la ruta de React Router)
-    window.location.href = "/producto1"; 
+  useEffect(() => {
+    cargarCarrito();
+  }, []);
+
+  const removeItem = async (id) => {
+    await deleteDoc(doc(db, 'carrito', id));
+    cargarCarrito();
   };
 
-  // eliminar un producto
-  const removeItem = (id) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
-
-  // confirmar el pedido
   const confirmOrder = () => {
     setOrderConfirmed(true);
   };
 
   return (
     <>
-      <header className="bg-primary text-white py-4">
-        <div className="container d-flex justify-content-between align-items-center">
-          <div>
-            <h1 className="m-0">Carrito de pedidos</h1>
-          </div>
-          <div>
-            <a href="/" className="text-white mr-3">Inicio</a>
-            <a href="/InicioSesion" className="text-white mr-3">Mi cuenta</a>
-            <a href="/carrito" className="text-white">Carrito</a>
-          </div>
-        </div>
-      </header>
-
+      <Header />
       <div className="container my-5">
         <h2 className="mb-4">Tus Productos</h2>
         <div className="list-group" id="cart-items">
-          {renderCart()}
+          {cartItems.map(item => (
+            <div className="list-group-item d-flex justify-content-between align-items-center" key={item.id}>
+              <div>
+                <span className="mr-3">{item.nombre}</span>
+                <p className="mb-1">Color: {item.color}</p>
+                <p className="mb-1">Tamaño: {item.size}</p>
+                {item.customText && <p className="mb-1">Texto: {item.customText}</p>}
+              </div>
+              <div>
+                <button className="btn btn-danger btn-sm" onClick={() => removeItem(item.id)}>Eliminar</button>
+              </div>
+            </div>
+          ))}
         </div>
 
         <button className="btn btn-success btn-block mt-3" onClick={confirmOrder}>
