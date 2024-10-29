@@ -6,37 +6,34 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]); // Nuevo estado para las categorías
-  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '' });
+  const [categorias, setCategorias] = useState([]);
+  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
   const [imagen, setImagen] = useState(null);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
 
-  // Cargar productos desde Firestore
+  useEffect(() => {
+    cargarProductos();
+    cargarCategorias();
+  }, []);
+
   const cargarProductos = async () => {
     const productosSnapshot = await getDocs(collection(db, 'productos'));
     const listaProductos = productosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setProductos(listaProductos);
   };
 
-  // Cargar categorías desde Firestore
   const cargarCategorias = async () => {
     const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
     const listaCategorias = categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setCategorias(listaCategorias);
   };
 
-  useEffect(() => {
-    cargarProductos();
-    cargarCategorias(); // Llamar a cargarCategorias al iniciar el componente
-  }, []);
-
   const agregarProducto = async (e) => {
     e.preventDefault();
     let imgUrl = '';
 
-    // Subir la imagen a Firebase Storage si hay una imagen seleccionada
     if (imagen) {
       const imgRef = ref(storage, `productos/${imagen.name}`);
       await uploadBytes(imgRef, imagen);
@@ -44,7 +41,7 @@ const GestionarProductos = () => {
     }
 
     await addDoc(collection(db, 'productos'), { ...nuevoProducto, img_url: imgUrl });
-    setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '' });
+    setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
     setImagen(null);
     cargarProductos();
   };
@@ -61,7 +58,6 @@ const GestionarProductos = () => {
   const actualizarProducto = async () => {
     let imgUrl = productoSeleccionado.img_url;
 
-    // Si hay una nueva imagen, subirla y actualizar la URL
     if (imagen) {
       const imgRef = ref(storage, `productos/${imagen.name}`);
       await uploadBytes(imgRef, imagen);
@@ -71,6 +67,26 @@ const GestionarProductos = () => {
     await updateDoc(doc(db, 'productos', productoSeleccionado.id), { ...productoSeleccionado, img_url: imgUrl });
     setMostrarModalEditar(false);
     cargarProductos();
+  };
+
+  const handleColorChange = (e) => {
+    const selectedColor = e.target.value;
+    setNuevoProducto((prev) => ({
+      ...prev,
+      colores: prev.colores.includes(selectedColor)
+        ? prev.colores.filter((color) => color !== selectedColor)
+        : [...prev.colores, selectedColor],
+    }));
+  };
+
+  const handleTallaChange = (e) => {
+    const selectedTalla = e.target.value;
+    setNuevoProducto((prev) => ({
+      ...prev,
+      tallas: prev.tallas.includes(selectedTalla)
+        ? prev.tallas.filter((talla) => talla !== selectedTalla)
+        : [...prev.tallas, selectedTalla],
+    }));
   };
 
   return (
@@ -99,6 +115,19 @@ const GestionarProductos = () => {
           </Form.Control>
         </Form.Group>
         <Form.Group>
+          <Form.Label>Colores</Form.Label>
+          <Form.Check type="checkbox" label="Rojo" value="Rojo" onChange={handleColorChange} />
+          <Form.Check type="checkbox" label="Azul" value="Azul" onChange={handleColorChange} />
+          <Form.Check type="checkbox" label="Verde" value="Verde" onChange={handleColorChange} />
+          <Form.Check type="checkbox" label="Negro" value="Negro" onChange={handleColorChange} />
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>Tallas</Form.Label>
+          <Form.Check type="checkbox" label="Pequeño" value="Pequeño" onChange={handleTallaChange} />
+          <Form.Check type="checkbox" label="Mediano" value="Mediano" onChange={handleTallaChange} />
+          <Form.Check type="checkbox" label="Grande" value="Grande" onChange={handleTallaChange} />
+        </Form.Group>
+        <Form.Group>
           <Form.Label>Imagen</Form.Label>
           <Form.Control type="file" onChange={(e) => setImagen(e.target.files[0])} />
         </Form.Group>
@@ -107,30 +136,36 @@ const GestionarProductos = () => {
 
       <h3>Lista de Productos</h3>
       <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Precio</th>
-            <th>Imagen</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((producto) => (
-            <tr key={producto.id}>
-              <td>{producto.nombre}</td>
-              <td>{producto.descripcion}</td>
-              <td>{producto.precio}</td>
-              <td><img src={producto.img_url} alt={producto.nombre} style={{ width: '50px', height: '50px' }} /></td>
-              <td>
-                <Button size="sm" variant="warning" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEditar(true); }}>Editar</Button>{' '}
-                <Button size="sm" variant="danger" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEliminar(true); }}>Eliminar</Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Descripción</th>
+      <th>Precio</th>
+      <th>Colores</th>
+      <th>Tallas</th>
+      <th>Imagen</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {productos.map((producto) => (
+      <tr key={producto.id}>
+        <td>{producto.nombre}</td>
+        <td>{producto.descripcion}</td>
+        <td>{producto.precio}</td>
+        <td>{Array.isArray(producto.colores) ? producto.colores.join(", ") : "N/A"}</td>
+        <td>{Array.isArray(producto.tallas) ? producto.tallas.join(", ") : "N/A"}</td>
+        <td>
+          <img src={producto.img_url} alt={producto.nombre} style={{ width: '50px', height: '50px' }} />
+        </td>
+        <td>
+          <Button size="sm" variant="warning" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEditar(true); }}>Editar</Button>{' '}
+          <Button size="sm" variant="danger" onClick={() => { setProductoSeleccionado(producto); setMostrarModalEliminar(true); }}>Eliminar</Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
 
       {/* Modal para editar producto */}
       <Modal show={mostrarModalEditar} onHide={() => setMostrarModalEditar(false)}>
