@@ -78,6 +78,8 @@ const DetalleProducto = () => {
             <h2>{producto.nombre}</h2>
             <p>{producto.descripcion}</p>
             <p>Precio: ${producto.precio}</p>
+            <p>Colores Disponibles: {producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
+            <p>Tallas Disponibles: {producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
             <div className="mt-4">
               <h3>Personaliza tu Producto</h3>
               <form id="customization-form">
@@ -85,19 +87,18 @@ const DetalleProducto = () => {
                   <label htmlFor="color">Color</label>
                   <select className="form-control" id="color" value={color} onChange={(e) => setColor(e.target.value)}>
                     <option value="">Selecciona un color</option>
-                    <option>Rojo</option>
-                    <option>Azul</option>
-                    <option>Verde</option>
-                    <option>Negro</option>
+                    {producto.colores && producto.colores.map((color, index) => (
+                      <option key={index} value={color}>{color}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="size">Tamaño</label>
                   <select className="form-control" id="size" value={size} onChange={(e) => setSize(e.target.value)}>
                     <option value="">Selecciona un tamaño</option>
-                    <option>Pequeño</option>
-                    <option>Mediano</option>
-                    <option>Grande</option>
+                    {producto.tallas && producto.tallas.map((size, index) => (
+                      <option key={index} value={size}>{size}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="form-group">

@@ -102,6 +102,7 @@ const GestionarProductos = () => {
     { nombre: 'colores', etiqueta: 'Colores', tipo: 'checkbox', opciones: coloresDisponibles },
     { nombre: 'tallas', etiqueta: 'Tallas', tipo: 'checkbox', opciones: tallasDisponibles },
   ];
+  
 
   const columnasProducto = [
     { nombre: 'nombre', etiqueta: 'Nombre' },

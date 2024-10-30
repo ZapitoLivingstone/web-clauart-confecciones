@@ -21,11 +21,9 @@ const GestionarCategorias = () => {
 
   const handleAgregar = async (e) => {
     e.preventDefault();
-    // Si isEditing es true, actualiza; de lo contrario, crea una nueva categoría.
     if (isEditing) {
       await setDoc(doc(db, 'categorias', valores.id), valores); // Actualiza la categoría
     } else {
-      // Agregar lógica para crear una nueva categoría
       const nuevaCategoria = {
         nombre: valores.nombre,
         descripcion: valores.descripcion,
@@ -34,8 +32,8 @@ const GestionarCategorias = () => {
       setCategorias([...categorias, { id: docRef.id, ...nuevaCategoria }]);
     }
 
-    setValores({}); // Limpiar el formulario
-    setIsEditing(false); // Resetear modo de edición
+    setValores({}); 
+    setIsEditing(false); 
   };
 
   const handleEditar = (categoria) => {
