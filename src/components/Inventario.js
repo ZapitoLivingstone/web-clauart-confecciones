@@ -1,7 +1,9 @@
+// Inventario.js
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Card, Container, Row, Col } from 'react-bootstrap';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import HeaderAdmin from './HeaderAdmin'; // Importar el nuevo componente
 
 const Inventario = () => {
   const [materiales, setMateriales] = useState([]);
@@ -9,6 +11,7 @@ const Inventario = () => {
   const [materialSeleccionado, setMaterialSeleccionado] = useState(null);
   const [mostrarModalAgregar, setMostrarModalAgregar] = useState(false);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
+  const [pestañaActiva, setPestañaActiva] = useState('inventario'); // Agregar pestaña activa
 
   useEffect(() => {
     cargarMateriales();
@@ -48,17 +51,10 @@ const Inventario = () => {
   };
 
   return (
+    <>
+    <HeaderAdmin pestañaActiva={pestañaActiva} setPestañaActiva={setPestañaActiva} /> {/* Usar el header */}
+
     <Container className="mt-4">
-      <header className="bg-dark text-white py-3 mb-4">
-        <Container className="d-flex justify-content-between align-items-center">
-          <h1 className="m-0">Inventario de Materiales</h1>
-          <div>
-            <Button variant="link" className="text-white" href="/panelAdmin">Productos</Button>
-            <Button variant="link" className="text-white" href="/pedidos">Pedidos</Button>
-            <Button variant="link" className="text-white" href="/inventario">Inventario</Button>
-          </div>
-        </Container>
-      </header>
 
       <Button variant="success" className="mb-3" onClick={() => setMostrarModalAgregar(true)}>
         Agregar Material
@@ -177,12 +173,13 @@ const Inventario = () => {
               />
             </Form.Group>
             <Button variant="primary" type="submit">
-              Guardar Cambios
+              Actualizar Material
             </Button>
           </Form>
         </Modal.Body>
       </Modal>
     </Container>
+    </>
   );
 };
 
