@@ -25,6 +25,7 @@ const DetalleProducto = () => {
         const productoSnapshot = await getDoc(productoRef);
 
         if (productoSnapshot.exists()) {
+          console.log("Datos del producto", productoSnapshot.data());
           const data = productoSnapshot.data();
           setProducto({ id: productoSnapshot.id, ...data });
         } else {
