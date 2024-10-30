@@ -43,14 +43,16 @@ const DetalleProducto = () => {
   }, [productoId]);
 
   const agregarAlCarrito = async () => {
+    if (!producto) return; // Agregar chequeo si el producto existe
+
     const productoPersonalizado = {
       productoId: producto.id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precio: producto.precio,
-      color: color,
-      size: size,
-      customText: customText,
+      color,
+      size,
+      customText,
     };
 
     try {

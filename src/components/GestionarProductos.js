@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Table } from 'react-bootstrap';
 import { db, storage } from '../firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import FormularioGenerico from './FormularioGenerico';
+import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
+  const [coloresDisponibles, setColoresDisponibles] = useState([]);
+  const [tallasDisponibles, setTallasDisponibles] = useState([]);
+  const [nuevoProducto, setNuevoProducto] = useState({ 
+    nombre: '', 
+    descripcion: '', 
+    precio: '', 
+    categoria: '', 
+    img_url: '', 
+    colores: [], 
+    tallas: [] 
+  });
   const [imagen, setImagen] = useState(null);
   const [modalConfig, setModalConfig] = useState({ show: false, mode: '', producto: null });
 
   useEffect(() => {
     cargarProductos();
     cargarCategorias();
+    cargarColoresYTallas();
   }, []);
 
   const cargarProductos = async () => {
@@ -25,6 +37,13 @@ const GestionarProductos = () => {
   const cargarCategorias = async () => {
     const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
     setCategorias(categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  };
+
+  const cargarColoresYTallas = async () => {
+    const coloresSnapshot = await getDocs(collection(db, 'colores'));
+    const tallasSnapshot = await getDocs(collection(db, 'tallas'));
+    setColoresDisponibles(coloresSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
+    setTallasDisponibles(tallasSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
   };
 
   const agregarProducto = async (e) => {
@@ -43,12 +62,12 @@ const GestionarProductos = () => {
     cargarProductos();
   };
 
-  const eliminarProducto = async () => {
-    if (modalConfig.producto) {
-      await deleteDoc(doc(db, 'productos', modalConfig.producto.id));
-      setModalConfig({ show: false, mode: '', producto: null });
-      cargarProductos();
-    }
+  const handleEditarProducto = (producto) => {
+    setModalConfig({ show: true, mode: 'edit', producto });
+  };
+
+  const handleEliminarProducto = (producto) => {
+    setModalConfig({ show: true, mode: 'delete', producto });
   };
 
   const actualizarProducto = async () => {
@@ -65,73 +84,50 @@ const GestionarProductos = () => {
     cargarProductos();
   };
 
-  const handleEdit = (producto) => {
-    setModalConfig({ show: true, mode: 'edit', producto });
+  const eliminarProducto = async () => {
+    if (modalConfig.producto) {
+      await deleteDoc(doc(db, 'productos', modalConfig.producto.id));
+      setModalConfig({ show: false, mode: '', producto: null });
+      cargarProductos();
+    }
   };
 
-  const handleDelete = (producto) => {
-    setModalConfig({ show: true, mode: 'delete', producto });
-  };
+  // Configuración de campos y columnas
+  const camposProducto = [
+    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text' },
+    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
+    { nombre: 'precio', etiqueta: 'Precio', tipo: 'number' },
+    { nombre: 'categoria', etiqueta: 'Categoría', tipo: 'select', opciones: categorias },
+    { nombre: 'img_url', etiqueta: 'Imagen', tipo: 'file' },
+    { nombre: 'colores', etiqueta: 'Colores', tipo: 'checkbox', opciones: coloresDisponibles },
+    { nombre: 'tallas', etiqueta: 'Tallas', tipo: 'checkbox', opciones: tallasDisponibles },
+  ];
+
+  const columnasProducto = [
+    { nombre: 'nombre', etiqueta: 'Nombre' },
+    { nombre: 'descripcion', etiqueta: 'Descripción' },
+    { nombre: 'precio', etiqueta: 'Precio' },
+    { nombre: 'colores', etiqueta: 'Colores' },
+    { nombre: 'tallas', etiqueta: 'Tallas' },
+    { nombre: 'img_url', etiqueta: 'Imagen' },
+  ];
 
   return (
     <div>
-      <h2>Gestionar Productos</h2>
-      <Form onSubmit={agregarProducto} className="mb-4">
-        <Form.Group>
-          <Form.Label>Nombre</Form.Label>
-          <Form.Control type="text" value={nuevoProducto.nombre} onChange={(e) => setNuevoProducto({ ...nuevoProducto, nombre: e.target.value })} />
-        </Form.Group>
-        <Form.Group>
-          <Form.Label>Descripción</Form.Label>
-          <Form.Control as="textarea" value={nuevoProducto.descripcion} onChange={(e) => setNuevoProducto({ ...nuevoProducto, descripcion: e.target.value })} />
-        </Form.Group>
-        <Form.Group>
-          <Form.Label>Precio</Form.Label>
-          <Form.Control type="number" value={nuevoProducto.precio} onChange={(e) => setNuevoProducto({ ...nuevoProducto, precio: e.target.value })} />
-        </Form.Group>
-        <Form.Group>
-          <Form.Label>Categoría</Form.Label>
-          <Form.Control as="select" value={nuevoProducto.categoria} onChange={(e) => setNuevoProducto({ ...nuevoProducto, categoria: e.target.value })}>
-            <option>Seleccionar</option>
-            {categorias.map((categoria) => (
-              <option key={categoria.id} value={categoria.nombre}>{categoria.nombre}</option>
-            ))}
-          </Form.Control>
-        </Form.Group>
-        <Form.Group>
-          <Form.Label>Imagen</Form.Label>
-          <Form.Control type="file" onChange={(e) => setImagen(e.target.files[0])} />
-        </Form.Group>
-        <Button type="submit" className="mt-3">Agregar Producto</Button>
-      </Form>
-
-      <h3>Lista de Productos</h3>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Precio</th>
-            <th>Imagen</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((producto) => (
-            <tr key={producto.id}>
-              <td>{producto.nombre}</td>
-              <td>{producto.descripcion}</td>
-              <td>{producto.precio}</td>
-              <td><img src={producto.img_url} alt={producto.nombre} style={{ width: '50px', height: '50px' }} /></td>
-              <td>
-                <Button size="sm" variant="warning" onClick={() => handleEdit(producto)}>Editar</Button>{' '}
-                <Button size="sm" variant="danger" onClick={() => handleDelete(producto)}>Eliminar</Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
+      <FormularioGenerico
+        titulo="Agregar Producto"
+        campos={camposProducto}
+        valores={nuevoProducto}
+        setValores={setNuevoProducto}
+        onSubmit={agregarProducto}
+        onImageChange={(e) => setImagen(e.target.files[0])}
+      />
+      <ListaGenerica
+        datos={productos}
+        columnas={columnasProducto}
+        onEditar={handleEditarProducto}
+        onEliminar={handleEliminarProducto}
+      />
       <ModalGenerico
         show={modalConfig.show}
         handleClose={() => setModalConfig({ show: false, mode: '', producto: null })}
@@ -140,24 +136,14 @@ const GestionarProductos = () => {
         confirmText={modalConfig.mode === 'edit' ? 'Guardar Cambios' : 'Eliminar'}
       >
         {modalConfig.mode === 'edit' ? (
-          <Form>
-            <Form.Group>
-              <Form.Label>Nombre</Form.Label>
-              <Form.Control type="text" value={modalConfig.producto?.nombre || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, nombre: e.target.value } })} />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Descripción</Form.Label>
-              <Form.Control as="textarea" value={modalConfig.producto?.descripcion || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, descripcion: e.target.value } })} />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Precio</Form.Label>
-              <Form.Control type="number" value={modalConfig.producto?.precio || ''} onChange={(e) => setModalConfig({ ...modalConfig, producto: { ...modalConfig.producto, precio: e.target.value } })} />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Imagen</Form.Label>
-              <Form.Control type="file" onChange={(e) => setImagen(e.target.files[0])} />
-            </Form.Group>
-          </Form>
+          <FormularioGenerico
+            titulo="Editar Producto"
+            campos={camposProducto}
+            valores={modalConfig.producto}
+            setValores={(valores) => setModalConfig({ ...modalConfig, producto: valores })}
+            onSubmit={actualizarProducto}
+            onImageChange={(e) => setImagen(e.target.files[0])}
+          />
         ) : (
           <p>¿Estás seguro de que deseas eliminar este producto?</p>
         )}
