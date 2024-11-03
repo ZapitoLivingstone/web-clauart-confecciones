@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore'; // Agregar importaciones necesarias
+import { doc, getDoc } from 'firebase/firestore';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Header = () => {
@@ -85,11 +85,28 @@ const Header = () => {
         </div>
         <div>
           <Link to="/" className="text-white me-3">Inicio</Link>
-          <Link to="/InicioSesion" className="text-white me-3">Mi cuenta</Link>
-          <Link to="/Carrito" className="text-white me-3">Carrito</Link>
-          {isAdmin && <Link to="/PanelAdmin" className="text-white me-3">Panel de Admin</Link>}
-          {isLoggedIn && (
-            <button onClick={handleLogout} className="btn btn-sm btn-light">Cerrar Sesión</button>
+          {!isLoggedIn && (
+            <>
+              <Link to="/InicioSesion" className="text-white me-3">Iniciar Sesión</Link>
+              <Link to="/Registro" className="text-white me-3">Registrarse</Link>
+            </>
+          )}
+          {isLoggedIn && !isAdmin && (
+            <>
+              <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
+              <Link to="/MisPedidos" className="text-white me-3">Mis Pedidos</Link>
+              <Link to="/Carrito" className="text-white me-3">Carrito</Link>
+              <button onClick={handleLogout} className="btn btn-sm btn-light">Cerrar Sesión</button>
+            </>
+          )}
+          {isAdmin && (
+            <>
+              <Link to="/PanelAdmin" className="text-white me-3">Panel de Administrador</Link>
+              <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
+              <Link to="/MisPedidos" className="text-white me-3">Mis Pedidos</Link>
+              <Link to="/Carrito" className="text-white me-3">Carrito</Link>
+              <button onClick={handleLogout} className="btn btn-sm btn-light">Cerrar Sesión</button>
+            </>
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import Header from './Header';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, addDoc } from 'firebase/firestore';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Carrito = () => {
@@ -23,8 +23,26 @@ const Carrito = () => {
     cargarCarrito();
   };
 
-  const confirmOrder = () => {
-    setOrderConfirmed(true);
+  const confirmOrder = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const pedidosCollection = collection(db, 'pedidos');
+
+      // Añadir cada artículo del carrito a la colección 'pedidos'
+      for (let item of cartItems) {
+        await addDoc(pedidosCollection, {
+          ...item,
+          usuarioId: user.uid,
+          fechaPedido: new Date(),
+          estado: 'pendiente',
+        });
+        // Eliminar cada elemento del carrito después de añadirlo a 'pedidos'
+        await deleteDoc(doc(db, 'carrito', item.id));
+      }
+
+      setCartItems([]); // Limpiar el carrito después de confirmar el pedido
+      setOrderConfirmed(true);
+    }
   };
 
   return (

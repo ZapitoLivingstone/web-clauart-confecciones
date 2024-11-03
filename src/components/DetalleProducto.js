@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; 
 import { db } from '../firebase';
+import Header from './Header';
 
 const DetalleProducto = () => {
   const { productoId } = useParams(); 
@@ -44,7 +45,7 @@ const DetalleProducto = () => {
   }, [productoId]);
 
   const agregarAlCarrito = async () => {
-    if (!producto) return; // Agregar chequeo si el producto existe
+    if (!producto) return; 
 
     const productoPersonalizado = {
       productoId: producto.id,
@@ -68,6 +69,8 @@ const DetalleProducto = () => {
   if (error) return <div>{error}</div>;
 
   return (
+    <>
+    <Header/>
     <div className="container my-5">
       <h1>Detalles del Producto</h1>
       {producto ? (
@@ -115,6 +118,8 @@ const DetalleProducto = () => {
         <p>No se encontró información del producto.</p>
       )}
     </div>
+    
+    </>
   );
 };
 

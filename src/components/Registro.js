@@ -3,6 +3,7 @@ import { auth, db } from '../firebase'; // Importamos la configuración de Fireb
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, getDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import Header from './Header';
 import '../styles/styleAuth.css';
 
 const Registro = () => {
@@ -89,19 +90,7 @@ const Registro = () => {
 
   return (
     <>
-      <header className="bg-primary text-white py-4">
-        <div className="container d-flex justify-content-between align-items-center">
-          <div>
-            <h1 className="m-0">CLAUART Confecciones</h1>
-            <p className="m-0">Taller de confecciones de prendas de vestir</p>
-          </div>
-          <div>
-            <a href="/" className="text-white me-3">Inicio</a>
-            <a href="/InicioSesion" className="text-white me-3">Mi cuenta</a>
-            <a href="/Carrito" className="text-white">Carrito</a>
-          </div>
-        </div>
-      </header>
+      <Header />
       
       <div className="container my-5">
         <div className="col-md-6 offset-md-3">
