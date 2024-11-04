@@ -1,7 +1,7 @@
 // PanelAdmin.js
 import React, { useState } from 'react';
 import { Container } from 'react-bootstrap';
-import HeaderAdmin from './HeaderAdmin'; // Importar el nuevo componente
+import HeaderAdmin from './HeaderAdmin'; 
 import GestionarProductos from './GestionarProductos';
 import GestionarCategorias from './GestionarCategorias';
 

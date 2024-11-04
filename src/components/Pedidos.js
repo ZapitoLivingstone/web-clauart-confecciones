@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import HeaderAdmin from './HeaderAdmin';
 import { db } from '../firebase';
-import { getDocs, collection, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import ModalGenerico from './ModalGenerico'; 
+import { getDocs, collection, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import ModalGenerico from './ModalGenerico';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Pedidos = () => {
@@ -10,73 +10,134 @@ const Pedidos = () => {
   const [usuarios, setUsuarios] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState(null);
+  const [pestañaActiva, setPestañaActiva] = useState('pedidos');
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const cargarPedidos = async () => {
-      try {
-        const pedidosSnapshot = await getDocs(collection(db, 'pedidos'));
-        const pedidosData = pedidosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        console.log("Pedidos cargados:", pedidosData);
-        setPedidos(pedidosData);
-      } catch (error) {
-        console.error("Error al cargar pedidos:", error);
-      }
-    };
-
-    const cargarUsuarios = async () => {
-      try {
-        const usuariosSnapshot = await getDocs(collection(db, 'users'));
-        const usuariosData = {};
-        usuariosSnapshot.docs.forEach((doc) => {
-          const uid = doc.id;
-          const data = doc.data();
-          usuariosData[uid] = data.nombre;
-        });
-        console.log("Usuarios cargados:", usuariosData);
-        setUsuarios(usuariosData);
-      } catch (error) {
-        console.error("Error al cargar usuarios:", error);
-      }
-    };
-
-    cargarPedidos();
-    cargarUsuarios();
+  const cargarPedidos = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const pedidosRef = collection(db, 'pedidos');
+      const pedidosSnapshot = await getDocs(pedidosRef);
+      const pedidosData = pedidosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      console.log("Pedidos cargados:", pedidosData);
+      setPedidos(pedidosData);
+    } catch (error) {
+      console.error("Error al cargar pedidos:", error);
+      alert("Error al cargar los pedidos");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const actualizarEstadoPedido = async (pedidoId, nuevoEstado) => {
+  const cargarUsuarios = useCallback(async () => {
     try {
-      const pedidoRef = doc(db, 'pedidos', pedidoId);
-      await updateDoc(pedidoRef, { estado: nuevoEstado });
-      setPedidos((prevPedidos) =>
-        prevPedidos.map((pedido) =>
-          pedido.id === pedidoId ? { ...pedido, estado: nuevoEstado } : pedido
-        )
-      );
+      const usuariosRef = collection(db, 'users');
+      const usuariosSnapshot = await getDocs(usuariosRef);
+      const usuariosData = {};
+      usuariosSnapshot.docs.forEach((doc) => {
+        usuariosData[doc.id] = doc.data().nombre;
+      });
+      setUsuarios(usuariosData);
     } catch (error) {
-      console.error("Error al actualizar el estado del pedido:", error);
+      console.error("Error al cargar usuarios:", error);
+      alert("Error al cargar los usuarios");
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarPedidos();
+    cargarUsuarios();
+  }, [cargarPedidos, cargarUsuarios]);
+
+  const verificarDocumento = async (pedidoId) => {
+    try {
+      console.log(`Verificando documento con ID: ${pedidoId}`);
+      const docRef = doc(db, 'pedidos', pedidoId);
+      const docSnap = await getDoc(docRef);
+      console.log(`Documento existe: ${docSnap.exists()}`);
+      return docSnap.exists();
+    } catch (error) {
+      console.error("Error al verificar documento:", error);
+      return false;
     }
   };
 
-  const handleDeletePedido = async (pedidoId) => {
+  const handleDeletePedido = async () => {
+    if (!selectedPedido) return;
+
+    setIsLoading(true);
     try {
-      await deleteDoc(doc(db, 'pedidos', pedidoId));
-      setPedidos((prevPedidos) => prevPedidos.filter((pedido) => pedido.id !== pedidoId));
-      setShowModal(false); 
+      const existe = await verificarDocumento(selectedPedido);
+      if (!existe) {
+        throw new Error("El pedido no existe");
+      }
+
+      const pedidoRef = doc(db, 'pedidos', selectedPedido);
+      await deleteDoc(pedidoRef);
+      
+      setPedidos(prevPedidos => 
+        prevPedidos.filter(pedido => pedido.id !== selectedPedido)
+      );
+      
+      setShowModal(false);
+      setSelectedPedido(null);
+      alert("Pedido eliminado con éxito");
     } catch (error) {
       console.error("Error al eliminar el pedido:", error);
+      alert(error.message || "Error al eliminar el pedido");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const actualizarEstadoPedido = async (pedidoId, nuevoEstado) => {
+    setIsLoading(true);
+    try {
+      console.log(`Intentando actualizar pedido: ${pedidoId} a estado: ${nuevoEstado}`);
+      
+      const existe = await verificarDocumento(pedidoId);
+      if (!existe) {
+        throw new Error("El pedido no existe en la base de datos");
+      }
+
+      const pedidoRef = doc(db, 'pedidos', pedidoId);
+      await updateDoc(pedidoRef, {
+        estado: nuevoEstado
+      });
+
+      setPedidos(prevPedidos =>
+        prevPedidos.map(pedido =>
+          pedido.id === pedidoId ? { ...pedido, estado: nuevoEstado } : pedido
+        )
+      );
+
+      alert("Estado actualizado con éxito");
+    } catch (error) {
+      console.error("Error al actualizar el estado del pedido:", error);
+      alert(error.message || "Error al actualizar el estado del pedido");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div>
-      <HeaderAdmin />
+      <HeaderAdmin pestañaActiva={pestañaActiva} setPestañaActiva={setPestañaActiva} />
       <div className="container mt-4">
+        {isLoading && (
+          <div className="alert alert-info">
+            Cargando...
+          </div>
+        )}
         <div className="row">
-          {pedidos.map((pedido, index) => (
+          {pedidos.map((pedido) => (
             <div key={pedido.id} className="col-md-4 mb-4">
               <div className="card">
                 <div className="card-body">
-                  <h5 className="card-title">{pedido.nombreProducto}</h5>
+                  <h5 className="card-title">{pedido.nombre}</h5>
                   <h6 className="card-subtitle mb-2 text-muted">ID: {pedido.id}</h6>
                   <p>Usuario: {usuarios[pedido.usuarioId] || 'Usuario desconocido'}</p>
                   <p className="card-text">Descripción: {pedido.descripcion}</p>
@@ -85,12 +146,15 @@ const Pedidos = () => {
                   <p className="card-text">Texto Personalizado: {pedido.customText}</p>
 
                   <div className="mb-3">
-                    <label htmlFor={`estadoSelect${index}`} className="form-label">Estado del Pedido</label>
+                    <label className="form-label">Estado del Pedido</label>
                     <select
-                      id={`estadoSelect${index}`}
                       className="form-select"
                       value={pedido.estado || 'pendiente'}
-                      onChange={(e) => actualizarEstadoPedido(pedido.id, e.target.value)}
+                      onChange={(e) => {
+                        console.log(`Cambiando estado de pedido ${pedido.id} a ${e.target.value}`);
+                        actualizarEstadoPedido(pedido.id, e.target.value);
+                      }}
+                      disabled={isLoading}
                     >
                       <option value="pendiente">Pendiente</option>
                       <option value="proceso">En Proceso</option>
@@ -98,19 +162,14 @@ const Pedidos = () => {
                     </select>
                   </div>
 
-                  <button 
-                    className="btn btn-primary me-2"
-                    onClick={() => actualizarEstadoPedido(pedido.id, pedido.estado)}
-                  >
-                    Actualizar
-                  </button>
-
-                  <button 
+                  <button
                     className="btn btn-danger"
                     onClick={() => {
-                      setSelectedPedido(pedido.id); // Guardar el ID del pedido seleccionado
-                      setShowModal(true); 
+                      console.log(`Seleccionando pedido para eliminar: ${pedido.id}`);
+                      setSelectedPedido(pedido.id);
+                      setShowModal(true);
                     }}
+                    disabled={isLoading}
                   >
                     Eliminar
                   </button>
@@ -125,10 +184,10 @@ const Pedidos = () => {
         show={showModal}
         handleClose={() => setShowModal(false)}
         title="Confirmar Eliminación"
-        handleConfirm={() => handleDeletePedido(selectedPedido)} // Llama a la función de eliminar
+        handleConfirm={handleDeletePedido}
         confirmText="Eliminar"
       >
-        <p>¿Estás seguro de que deseas eliminar este pedido?</p>
+        <p>¿Estás seguro de que deseas eliminar el pedido <strong>{selectedPedido}</strong>?</p>
       </ModalGenerico>
     </div>
   );

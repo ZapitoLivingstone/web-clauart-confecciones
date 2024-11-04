@@ -12,6 +12,7 @@ const DetalleProducto = () => {
   const [color, setColor] = useState('');
   const [size, setSize] = useState('');
   const [customText, setCustomText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchProducto = async () => {
@@ -26,16 +27,13 @@ const DetalleProducto = () => {
         const productoSnapshot = await getDoc(productoRef);
 
         if (productoSnapshot.exists()) {
-          console.log("Datos del producto", productoSnapshot.data());
           const data = productoSnapshot.data();
           setProducto({ id: productoSnapshot.id, ...data });
         } else {
-          console.error("El producto no existe");
           setError("El producto no existe");
         }
       } catch (error) {
-        console.error("Error al obtener el producto:", error);
-        setError("Error al obtener el producto");
+        handleError(error, "Error al obtener el producto");
       } finally {
         setLoading(false);
       }
@@ -44,9 +42,28 @@ const DetalleProducto = () => {
     fetchProducto();
   }, [productoId]);
 
-  const agregarAlCarrito = async () => {
-    if (!producto) return; 
+  const handleError = (error, mensaje) => {
+    console.error(mensaje, error);
+    alert(`${mensaje}. Por favor, intenta nuevamente.`);
+  };
 
+  const validarProducto = () => {
+    if (!color) {
+      alert('Por favor selecciona un color');
+      return false;
+    }
+    if (!size) {
+      alert('Por favor selecciona un tamaño');
+      return false;
+    }
+    return true;
+  };
+
+  const agregarAlCarrito = async () => {
+    if (!producto || !validarProducto()) return;
+
+    setIsLoading(true);
+    
     const productoPersonalizado = {
       productoId: producto.id,
       nombre: producto.nombre,
@@ -55,13 +72,21 @@ const DetalleProducto = () => {
       color,
       size,
       customText,
+      fechaAgregado: new Date().toISOString(),
+      img_url: producto.img_url
     };
 
     try {
       await addDoc(collection(db, 'carrito'), productoPersonalizado);
-      alert('Producto agregado al carrito');
+      alert('Producto agregado al carrito exitosamente');
+      // Limpiar formulario
+      setColor('');
+      setSize('');
+      setCustomText('');
     } catch (error) {
-      console.error("Error al agregar al carrito:", error);
+      handleError(error, "Error al agregar al carrito");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,55 +95,81 @@ const DetalleProducto = () => {
 
   return (
     <>
-    <Header/>
-    <div className="container my-5">
-      <h1>Detalles del Producto</h1>
-      {producto ? (
-        <div className="row">
-          <div className="col-md-6">
-            <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
-          </div>
-          <div className="col-md-6">
-            <h2>{producto.nombre}</h2>
-            <p>{producto.descripcion}</p>
-            <p>Precio: ${producto.precio}</p>
-            <p>Colores Disponibles: {producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
-            <p>Tallas Disponibles: {producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
-            <div className="mt-4">
-              <h3>Personaliza tu Producto</h3>
-              <form id="customization-form">
-                <div className="form-group">
-                  <label htmlFor="color">Color</label>
-                  <select className="form-control" id="color" value={color} onChange={(e) => setColor(e.target.value)}>
-                    <option value="">Selecciona un color</option>
-                    {producto.colores && producto.colores.map((color, index) => (
-                      <option key={index} value={color}>{color}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="size">Tamaño</label>
-                  <select className="form-control" id="size" value={size} onChange={(e) => setSize(e.target.value)}>
-                    <option value="">Selecciona un tamaño</option>
-                    {producto.tallas && producto.tallas.map((size, index) => (
-                      <option key={index} value={size}>{size}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="text">Texto Personalizado</label>
-                  <input type="text" className="form-control" id="text" placeholder="Ingresa el texto" value={customText} onChange={(e) => setCustomText(e.target.value)} />
-                </div>
-                <button type="button" className="btn btn-primary mt-3" onClick={agregarAlCarrito}>Agregar al Carrito</button>
-              </form>
+      <Header/>
+      <div className="container my-5">
+        <h1>Detalles del Producto</h1>
+        {producto ? (
+          <div className="row">
+            <div className="col-md-6">
+              <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
+            </div>
+            <div className="col-md-6">
+              <h2>{producto.nombre}</h2>
+              <p>{producto.descripcion}</p>
+              <p>Precio: ${producto.precio}</p>
+              <p>Colores Disponibles: {producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
+              <p>Tallas Disponibles: {producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
+              <div className="mt-4">
+                <h3>Personaliza tu Producto</h3>
+                <form id="customization-form">
+                  <div className="form-group mb-3">
+                    <label htmlFor="color">Color</label>
+                    <select 
+                      className="form-control" 
+                      id="color" 
+                      value={color} 
+                      onChange={(e) => setColor(e.target.value)}
+                    >
+                      <option value="">Selecciona un color</option>
+                      {producto.colores && producto.colores.map((color, index) => (
+                        <option key={index} value={color}>{color}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group mb-3">
+                    <label htmlFor="size">Tamaño</label>
+                    <select 
+                      className="form-control" 
+                      id="size" 
+                      value={size} 
+                      onChange={(e) => setSize(e.target.value)}
+                    >
+                      <option value="">Selecciona un tamaño</option>
+                      {producto.tallas && producto.tallas.map((size, index) => (
+                        <option key={index} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group mb-3">
+                    <label htmlFor="text">Texto Personalizado</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      id="text" 
+                      placeholder="Ingresa el texto" 
+                      value={customText} 
+                      onChange={(e) => setCustomText(e.target.value)} 
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary mt-3" 
+                    onClick={agregarAlCarrito}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    ) : null}
+                    {isLoading ? 'Agregando...' : 'Agregar al Carrito'}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <p>No se encontró información del producto.</p>
-      )}
-    </div>
-    
+        ) : (
+          <p>No se encontró información del producto.</p>
+        )}
+      </div>
     </>
   );
 };

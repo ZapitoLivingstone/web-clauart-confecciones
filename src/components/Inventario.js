@@ -1,9 +1,8 @@
-// Inventario.js
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Card, Container, Row, Col } from 'react-bootstrap';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import HeaderAdmin from './HeaderAdmin'; // Importar el nuevo componente
+import HeaderAdmin from './HeaderAdmin'; 
 
 const Inventario = () => {
   const [materiales, setMateriales] = useState([]);
@@ -11,7 +10,7 @@ const Inventario = () => {
   const [materialSeleccionado, setMaterialSeleccionado] = useState(null);
   const [mostrarModalAgregar, setMostrarModalAgregar] = useState(false);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
-  const [pestañaActiva, setPestañaActiva] = useState('inventario'); // Agregar pestaña activa
+  const [pestañaActiva, setPestañaActiva] = useState('inventario'); 
 
   useEffect(() => {
     cargarMateriales();
