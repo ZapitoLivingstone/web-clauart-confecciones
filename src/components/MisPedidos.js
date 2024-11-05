@@ -18,7 +18,8 @@ const MisPedidos = () => {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const pedidosData = snapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          fechaPedido: formatFechaPedido(doc.data().fechaPedido)
         }));
         setPedidos(pedidosData);
         setLoading(false);
@@ -27,6 +28,13 @@ const MisPedidos = () => {
       return () => unsubscribe();
     }
   }, []);
+
+  const formatFechaPedido = (fechaPedido) => {
+    if (fechaPedido && typeof fechaPedido.seconds === 'number') {
+      return new Date(fechaPedido.seconds * 1000).toLocaleDateString();
+    }
+    return new Date(fechaPedido).toLocaleDateString();
+  };
 
   if (loading) {
     return <p>Cargando tus pedidos...</p>;
@@ -61,7 +69,7 @@ const MisPedidos = () => {
                     <td>{pedido.customText || 'N/A'}</td>
                     <td>{pedido.size}</td>
                     <td>${pedido.precio}</td>
-                    <td>{new Date(pedido.fechaPedido.seconds * 1000).toLocaleDateString()}</td>
+                    <td>{pedido.fechaPedido}</td>
                     <td>{pedido.estado}</td>
                   </tr>
                 ))}

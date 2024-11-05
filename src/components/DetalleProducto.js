@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc } from 'firebase/firestore'; 
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
 import { db } from '../firebase';
 import Header from './Header';
 
@@ -72,14 +72,13 @@ const DetalleProducto = () => {
       color,
       size,
       customText,
-      fechaAgregado: new Date().toISOString(),
+      fechaAgregado: serverTimestamp(), // Ahora usando serverTimestamp para formato correcto
       img_url: producto.img_url
     };
 
     try {
       await addDoc(collection(db, 'carrito'), productoPersonalizado);
       alert('Producto agregado al carrito exitosamente');
-      // Limpiar formulario
       setColor('');
       setSize('');
       setCustomText('');
@@ -95,7 +94,7 @@ const DetalleProducto = () => {
 
   return (
     <>
-      <Header/>
+      <Header />
       <div className="container my-5">
         <h1>Detalles del Producto</h1>
         {producto ? (
