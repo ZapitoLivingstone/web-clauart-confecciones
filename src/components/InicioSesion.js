@@ -85,14 +85,13 @@ const InicioSesion = () => {
       const userSnapshot = await getDoc(userRef);
   
       if (!userSnapshot.exists()) {
-        // Si el documento no existe, crear el perfil del usuario
         console.log("Nuevo usuario detectado, creando documento en Firestore...");
         await setDoc(userRef, {
           email: user.email,
           nombre: user.displayName,
           fecha_registro: new Date(),
           metodo_registro: "google",
-          rol: "usuario", // o el rol que necesites
+          rol: "usuario", 
           telefono: "",
           direccion: ""
         });

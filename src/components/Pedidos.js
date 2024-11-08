@@ -9,14 +9,15 @@ const Pedidos = () => {
   const [pedidos, setPedidos] = useState([]);
   const [usuarios, setUsuarios] = useState({});
   const [showModal, setShowModal] = useState(false);
-  const [selectedPedidoId, setSelectedPedidoId] = useState(null); // Cambiado para almacenar el ID de Firebase
+  const [selectedPedidoId, setSelectedPedidoId] = useState(null);
+  const [pestañaActiva, setPestañaActiva] = useState('pedidos'); 
 
   useEffect(() => {
     const cargarPedidos = async () => {
       try {
         const pedidosSnapshot = await getDocs(collection(db, 'pedidos'));
         const pedidosData = pedidosSnapshot.docs.map((pedidoDoc) => ({
-          docId: pedidoDoc.id, // Guardamos el ID automático de Firebase
+          docId: pedidoDoc.id,
           ...pedidoDoc.data(),
         }));
         setPedidos(pedidosData);
@@ -32,7 +33,12 @@ const Pedidos = () => {
         usuariosSnapshot.docs.forEach((usuarioDoc) => {
           const uid = usuarioDoc.id;
           const data = usuarioDoc.data();
-          usuariosData[uid] = data.nombre;
+          // Incluimos nombre, dirección y teléfono en cada usuario
+          usuariosData[uid] = {
+            nombre: data.nombre || 'Usuario desconocido',
+            direccion: data.direccion || '',
+            telefono: data.telefono || ''
+          };
         });
         setUsuarios(usuariosData);
       } catch (error) {
@@ -73,7 +79,7 @@ const Pedidos = () => {
 
   return (
     <div>
-      <HeaderAdmin />
+      <HeaderAdmin pestañaActiva={pestañaActiva} setPestañaActiva={setPestañaActiva} /> 
       <div className="container mt-4">
         <div className="row">
           {pedidos.map((pedido, index) => (
@@ -81,8 +87,14 @@ const Pedidos = () => {
               <div className="card">
                 <div className="card-body">
                   <h5 className="card-title">{pedido.nombreProducto}</h5>
-                  <h6 className="card-subtitle mb-2 text-muted">ID Pedido: {pedido.id}</h6>
-                  <p>Usuario: {usuarios[pedido.usuarioId] || 'Usuario desconocido'}</p>
+                  <p>Usuario: {usuarios[pedido.usuarioId]?.nombre || 'Usuario desconocido'}</p>                 
+                  {usuarios[pedido.usuarioId]?.direccion && (
+                    <p className="card-text">Dirección: {usuarios[pedido.usuarioId].direccion}</p>
+                  )}
+                  {usuarios[pedido.usuarioId]?.telefono && (
+                    <p className="card-text">Teléfono: {usuarios[pedido.usuarioId].telefono}</p>
+                  )}
+
                   <p className="card-text">Descripción: {pedido.descripcion}</p>
                   <p className="card-text">Color: {pedido.color}</p>
                   <p className="card-text">Tamaño: {pedido.size}</p>
@@ -105,7 +117,7 @@ const Pedidos = () => {
                   <button
                     className="btn btn-danger"
                     onClick={() => {
-                      setSelectedPedidoId(pedido.docId); // Guardamos el ID automático de Firebase
+                      setSelectedPedidoId(pedido.docId);
                       setShowModal(true);
                     }}
                   >
