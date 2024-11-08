@@ -1,15 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Inicio from './components/Inicio';
-import InicioSesion from './components/InicioSesion';
-import Registro from './components/Registro';
-import Carrito from './components/Carrito';
-import DetalleProducto from './components/DetalleProducto';
-import PanelAdmin from './components/PanelAdmin';
-import Inventario from './components/Inventario';
-import Pedidos from './components/Pedidos';
-import MiCuenta from './components/MiCuenta';
-import MisPedidos from './components/MisPedidos';
+import Inicio from './screens/Inicio';
+import InicioSesion from './screens/InicioSesion';
+import Registro from './screens/Registro';
+import Carrito from './screens/Carrito';
+import DetalleProducto from './screens/DetalleProducto';
+import PanelAdmin from './screens/PanelAdmin';
+import Inventario from './screens/Inventario';
+import Pedidos from './screens/Pedidos';
+import MiCuenta from './screens/MiCuenta';
+import MisPedidos from './screens/MisPedidos';
 function App() {
   return (
     <Router>

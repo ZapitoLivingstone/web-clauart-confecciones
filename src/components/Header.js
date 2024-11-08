@@ -85,27 +85,32 @@ const Header = () => {
         </div>
         <div>
           <Link to="/" className="text-white me-3">Inicio</Link>
-          {!isLoggedIn && (
+
+          {isLoggedIn ? (
+            <>
+              <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
+              <div className="dropdown d-inline">
+                <button
+                  className="btn btn-secondary dropdown-toggle"
+                  type="button"
+                  id="dropdownMenuButton"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Opciones
+                </button>
+                <ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <li><Link to="/MisPedidos" className="dropdown-item">Mis Pedidos</Link></li>
+                  <li><Link to="/Carrito" className="dropdown-item">Carrito</Link></li>
+                  {isAdmin && <li><Link to="/PanelAdmin" className="dropdown-item">Panel de Administrador</Link></li>}
+                  <li><button onClick={handleLogout} className="dropdown-item">Cerrar Sesión</button></li>
+                </ul>
+              </div>
+            </>
+          ) : (
             <>
               <Link to="/InicioSesion" className="text-white me-3">Iniciar Sesión</Link>
               <Link to="/Registro" className="text-white me-3">Registrarse</Link>
-            </>
-          )}
-          {isLoggedIn && !isAdmin && (
-            <>
-              <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
-              <Link to="/MisPedidos" className="text-white me-3">Mis Pedidos</Link>
-              <Link to="/Carrito" className="text-white me-3">Carrito</Link>
-              <button onClick={handleLogout} className="btn btn-sm btn-light">Cerrar Sesión</button>
-            </>
-          )}
-          {isAdmin && (
-            <>
-              <Link to="/PanelAdmin" className="text-white me-3">Panel de Administrador</Link>
-              <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
-              <Link to="/MisPedidos" className="text-white me-3">Mis Pedidos</Link>
-              <Link to="/Carrito" className="text-white me-3">Carrito</Link>
-              <button onClick={handleLogout} className="btn btn-sm btn-light">Cerrar Sesión</button>
             </>
           )}
         </div>

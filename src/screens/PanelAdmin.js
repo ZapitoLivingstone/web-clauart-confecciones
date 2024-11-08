@@ -1,9 +1,9 @@
 // PanelAdmin.js
 import React, { useState } from 'react';
 import { Container } from 'react-bootstrap';
-import HeaderAdmin from './HeaderAdmin'; 
-import GestionarProductos from './GestionarProductos';
-import GestionarCategorias from './GestionarCategorias';
+import HeaderAdmin from '../components/HeaderAdmin'; 
+import GestionarProductos from '../components/GestionarProductos';
+import GestionarCategorias from '../components/GestionarCategorias';
 
 const PanelAdmin = () => {
   const [pestañaActiva, setPestañaActiva] = useState('productos');

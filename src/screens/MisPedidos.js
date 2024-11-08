@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import Header from './Header';
+import Header from '../components/Header';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MisPedidos = () => {

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Header from './Header';
-import ModalGenerico from './ModalGenerico';
+import Header from '../components/Header';
+import ModalGenerico from '../components/ModalGenerico';
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const MiCuenta = () => {

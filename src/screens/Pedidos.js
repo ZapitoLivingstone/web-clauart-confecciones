@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import HeaderAdmin from './HeaderAdmin';
+import HeaderAdmin from '../components/HeaderAdmin';
 import { db } from '../firebase';
 import { getDocs, collection, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import ModalGenerico from './ModalGenerico';
+import ModalGenerico from '../components/ModalGenerico';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Pedidos = () => {

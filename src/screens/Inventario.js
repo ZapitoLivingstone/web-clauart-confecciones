@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Card, Container, Row, Col } from 'react-bootstrap';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import HeaderAdmin from './HeaderAdmin'; 
+import HeaderAdmin from '../components/HeaderAdmin'; 
 
 const Inventario = () => {
   const [materiales, setMateriales] = useState([]);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
 import { db } from '../firebase';
-import Header from './Header';
+import Header from '../components/Header';
 
 const DetalleProducto = () => {
   const { productoId } = useParams(); 
