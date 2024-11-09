@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { db } from '../firebase'; 
-import { doc, updateDoc, getDoc, collection, getDocs } from 'firebase/firestore'; // Importa las funciones necesarias
+import { db } from '../firebase';
+import { doc, updateDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onImageChange }) => {
   const [nuevoColor, setNuevoColor] = useState('');
   const [nuevaTalla, setNuevaTalla] = useState('');
   const [coloresDisponibles, setColoresDisponibles] = useState([]);
   const [tallasDisponibles, setTallasDisponibles] = useState([]);
-  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]); // Estado para categorías
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
   const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
@@ -31,9 +31,8 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
       }
     };
 
-    // Cargar categorías disponibles desde la base de datos
     const cargarCategorias = async () => {
-      const categoriasSnapshot = await getDocs(collection(db, 'categorias')); // Usa collection y getDocs
+      const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
       const categorias = categoriasSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -42,7 +41,7 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
     };
 
     cargarDatos();
-    cargarCategorias(); // Llamar a la función para cargar categorías
+    cargarCategorias();
   }, [valores.id, setValores]);
 
   const agregarColor = async () => {
@@ -103,13 +102,15 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
               campo.nombre === 'colores' ? (
                 <>
                   <div className="d-flex align-items-center">
-                    <Form.Control 
-                      type="text" 
-                      placeholder="Agregar nuevo color" 
-                      value={nuevoColor} 
-                      onChange={(e) => setNuevoColor(e.target.value)} 
+                    <Form.Control
+                      type="text"
+                      placeholder="Agregar nuevo color"
+                      value={nuevoColor}
+                      onChange={(e) => setNuevoColor(e.target.value)}
                     />
-                    <Button onClick={agregarColor} className="ms-2" disabled={!nuevoColor}>Agregar</Button>
+                    <Button onClick={agregarColor} className="ms-2" disabled={!nuevoColor}>
+                      Agregar
+                    </Button>
                   </div>
                   <div className="mt-2">
                     {coloresDisponibles.map((color, index) => (
@@ -132,13 +133,15 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
               ) : campo.nombre === 'tallas' ? (
                 <>
                   <div className="d-flex align-items-center">
-                    <Form.Control 
-                      type="text" 
-                      placeholder="Agregar nueva talla" 
-                      value={nuevaTalla} 
-                      onChange={(e) => setNuevaTalla(e.target.value)} 
+                    <Form.Control
+                      type="text"
+                      placeholder="Agregar nueva talla"
+                      value={nuevaTalla}
+                      onChange={(e) => setNuevaTalla(e.target.value)}
                     />
-                    <Button onClick={agregarTalla} className="ms-2" disabled={!nuevaTalla}>Agregar</Button>
+                    <Button onClick={agregarTalla} className="ms-2" disabled={!nuevaTalla}>
+                      Agregar
+                    </Button>
                   </div>
                   <div className="mt-2">
                     {tallasDisponibles.map((talla, index) => (
@@ -159,11 +162,19 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                   </div>
                 </>
               ) : null
-            ) : campo.nombre === 'categoria' ? ( // Aquí se agrega el select para la categoría
-              <Form.Control as="select" value={valores.categoria || ''} onChange={(e) => setValores({ ...valores, categoria: e.target.value })}>
-                <option value="" disabled>Selecciona una categoría</option>
+            ) : campo.nombre === 'categoria' ? (
+              <Form.Control
+                as="select"
+                value={valores.categoria || ''}
+                onChange={(e) => setValores({ ...valores, categoria: e.target.value })}
+              >
+                <option value="" disabled>
+                  Selecciona una categoría
+                </option>
                 {categoriasDisponibles.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>{categoria.nombre}</option> // Suponiendo que cada categoría tiene un id y un nombre
+                  <option key={categoria.id} value={categoria.id}>
+                    {categoria.nombre}
+                  </option>
                 ))}
               </Form.Control>
             ) : (
@@ -171,8 +182,10 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                 type={campo.tipo}
                 value={valores[campo.nombre] || ''}
                 onChange={(e) => setValores({ ...valores, [campo.nombre]: e.target.value })}
+                className={campo.error ? 'is-invalid' : ''}
               />
             )}
+            {campo.error && <div className="invalid-feedback">{campo.error}</div>}
           </Form.Group>
         ))}
         <Button type="submit">Agregar</Button>

@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import FormularioGenerico from './FormularioGenerico';
 import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
+import Validaciones from './Validaciones';
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
@@ -22,6 +23,7 @@ const GestionarProductos = () => {
   });
   const [imagen, setImagen] = useState(null);
   const [modalConfig, setModalConfig] = useState({ show: false, mode: '', producto: null });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     cargarProductos();
@@ -46,10 +48,21 @@ const GestionarProductos = () => {
     setTallasDisponibles(tallasSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
   };
 
+  const validarFormulario = () => {
+    const nuevosErrores = {
+      nombre: Validaciones.texto(nuevoProducto.nombre, 'Nombre'),
+      precio: Validaciones.precio(nuevoProducto.precio),
+      categoria: Validaciones.seleccion(nuevoProducto.categoria, 'Categoría'),
+    };
+    setErrors(nuevosErrores);
+    return !Object.values(nuevosErrores).some((error) => error);
+  };
+
   const agregarProducto = async (e) => {
     e.preventDefault();
-    let imgUrl = '';
+    if (!validarFormulario()) return;
 
+    let imgUrl = '';
     if (imagen) {
       const imgRef = ref(storage, `productos/${imagen.name}`);
       await uploadBytes(imgRef, imagen);
@@ -71,8 +84,9 @@ const GestionarProductos = () => {
   };
 
   const actualizarProducto = async () => {
+    if (!validarFormulario()) return;
+    
     let imgUrl = modalConfig.producto.img_url;
-
     if (imagen) {
       const imgRef = ref(storage, `productos/${imagen.name}`);
       await uploadBytes(imgRef, imagen);
@@ -92,17 +106,15 @@ const GestionarProductos = () => {
     }
   };
 
-  // Configuración de campos y columnas
   const camposProducto = [
-    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text' },
-    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
-    { nombre: 'precio', etiqueta: 'Precio', tipo: 'number' },
-    { nombre: 'categoria', etiqueta: 'Categoría', tipo: 'select', opciones: categorias },
+    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text', error: errors.nombre },
+    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea'},
+    { nombre: 'precio', etiqueta: 'Precio', tipo: 'number', error: errors.precio },
+    { nombre: 'categoria', etiqueta: 'Categoría', tipo: 'select', opciones: categorias, error: errors.categoria },
     { nombre: 'img_url', etiqueta: 'Imagen', tipo: 'file' },
     { nombre: 'colores', etiqueta: 'Colores', tipo: 'checkbox', opciones: coloresDisponibles },
     { nombre: 'tallas', etiqueta: 'Tallas', tipo: 'checkbox', opciones: tallasDisponibles },
   ];
-  
 
   const columnasProducto = [
     { nombre: 'nombre', etiqueta: 'Nombre' },
