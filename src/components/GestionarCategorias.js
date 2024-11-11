@@ -75,7 +75,7 @@ const GestionarCategorias = () => {
         setValores={setValores}
         onSubmit={handleAgregar}
       />
-
+    
       <ListaGenerica
         datos={categorias}
         columnas={[

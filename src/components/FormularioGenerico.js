@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { db } from '../firebase';
-import { doc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
 
 const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onImageChange }) => {
   const [nuevoColor, setNuevoColor] = useState('');
@@ -80,6 +80,36 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
     }
   };
 
+  const eliminarColor = async (colorId, colorValor) => {
+    try {
+      await deleteDoc(doc(db, 'colores', colorId));
+      setColoresDisponibles(coloresDisponibles.filter((c) => c.id !== colorId));
+      setValores({
+        ...valores,
+        colores: (valores.colores || []).filter((c) => c !== colorValor),
+      });
+      setMensaje(`Color ${colorValor} eliminado.`);
+    } catch (error) {
+      console.error("Error al eliminar el color:", error);
+      setMensaje("Error al eliminar el color.");
+    }
+  };
+
+  const eliminarTalla = async (tallaId, tallaValor) => {
+    try {
+      await deleteDoc(doc(db, 'tallas', tallaId));
+      setTallasDisponibles(tallasDisponibles.filter((t) => t.id !== tallaId));
+      setValores({
+        ...valores,
+        tallas: (valores.tallas || []).filter((t) => t !== tallaValor),
+      });
+      setMensaje(`Talla ${tallaValor} eliminada.`);
+    } catch (error) {
+      console.error("Error al eliminar la talla:", error);
+      setMensaje("Error al eliminar la talla.");
+    }
+  };
+
   return (
     <div>
       <h2>{titulo}</h2>
@@ -105,20 +135,28 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                     </Button>
                   </div>
                   <div className="mt-2">
-                    {coloresDisponibles.map((color, index) => (
-                      <Form.Check
-                        key={index}
-                        type="checkbox"
-                        label={color.valor}
-                        checked={(valores.colores || []).includes(color.valor)}
-                        onChange={() => {
-                          const actualizados = (valores.colores || []).includes(color.valor)
-                            ? valores.colores.filter((c) => c !== color.valor)
-                            : [...(valores.colores || []), color.valor];
-                          setValores({ ...valores, colores: actualizados });
-                        }}
-                        inline
-                      />
+                    {coloresDisponibles.map((color) => (
+                      <div key={color.id} className="d-inline-flex align-items-center me-2">
+                        <Form.Check
+                          type="checkbox"
+                          label={color.valor}
+                          checked={(valores.colores || []).includes(color.valor)}
+                          onChange={() => {
+                            const actualizados = (valores.colores || []).includes(color.valor)
+                              ? valores.colores.filter((c) => c !== color.valor)
+                              : [...(valores.colores || []), color.valor];
+                            setValores({ ...valores, colores: actualizados });
+                          }}
+                          inline
+                        />
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => eliminarColor(color.id, color.valor)}
+                        >
+                          &times;
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </>
@@ -136,20 +174,28 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                     </Button>
                   </div>
                   <div className="mt-2">
-                    {tallasDisponibles.map((talla, index) => (
-                      <Form.Check
-                        key={index}
-                        type="checkbox"
-                        label={talla.valor}
-                        checked={(valores.tallas || []).includes(talla.valor)}
-                        onChange={() => {
-                          const actualizados = (valores.tallas || []).includes(talla.valor)
-                            ? valores.tallas.filter((t) => t !== talla.valor)
-                            : [...(valores.tallas || []), talla.valor];
-                          setValores({ ...valores, tallas: actualizados });
-                        }}
-                        inline
-                      />
+                    {tallasDisponibles.map((talla) => (
+                      <div key={talla.id} className="d-inline-flex align-items-center me-2">
+                        <Form.Check
+                          type="checkbox"
+                          label={talla.valor}
+                          checked={(valores.tallas || []).includes(talla.valor)}
+                          onChange={() => {
+                            const actualizados = (valores.tallas || []).includes(talla.valor)
+                              ? valores.tallas.filter((t) => t !== talla.valor)
+                              : [...(valores.tallas || []), talla.valor];
+                            setValores({ ...valores, tallas: actualizados });
+                          }}
+                          inline
+                        />
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => eliminarTalla(talla.id, talla.valor)}
+                        >
+                          &times;
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </>

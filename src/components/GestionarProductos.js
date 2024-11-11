@@ -81,8 +81,8 @@ const GestionarProductos = () => {
       mode: 'edit',
       producto: {
         ...producto,
-        colores: producto.colores || [], // Asegura que colores esté definido como un arreglo
-        tallas: producto.tallas || [],   // Asegura que tallas esté definido como un arreglo
+        colores: producto.colores || [], 
+        tallas: producto.tallas || [],  
       },
     });
   };
