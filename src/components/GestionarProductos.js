@@ -76,7 +76,15 @@ const GestionarProductos = () => {
   };
 
   const handleEditarProducto = (producto) => {
-    setModalConfig({ show: true, mode: 'edit', producto });
+    setModalConfig({
+      show: true,
+      mode: 'edit',
+      producto: {
+        ...producto,
+        colores: producto.colores || [], // Asegura que colores esté definido como un arreglo
+        tallas: producto.tallas || [],   // Asegura que tallas esté definido como un arreglo
+      },
+    });
   };
 
   const handleEliminarProducto = (producto) => {

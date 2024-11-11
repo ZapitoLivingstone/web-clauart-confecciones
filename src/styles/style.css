@@ -1,15 +1,44 @@
-.search-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.search-input {
-    margin-right: 10px;
+/* styles.css */
+
+/* Estilos generales */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
 }
 
-.filter-container {
+/* Contenedor principal */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 15px;
+}
+
+/* Tarjetas */
+.card {
     margin-bottom: 20px;
 }
-.filter-container label {
-    margin-right: 10px;
+
+/* Imágenes responsivas */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 15px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+}
+
+/* Estilos para tabletas */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        padding: 20px;
+    }
 }

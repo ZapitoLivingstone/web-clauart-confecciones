@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { db } from '../firebase';
-import { doc, updateDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
 
 const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onImageChange }) => {
   const [nuevoColor, setNuevoColor] = useState('');
@@ -18,9 +18,7 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setColoresDisponibles(data.colores.map(c => ({ valor: c })) || []);
-          setTallasDisponibles(data.tallas.map(t => ({ valor: t })) || []);
-          setValores(prev => ({
+          setValores((prev) => ({
             ...prev,
             colores: data.colores || [],
             tallas: data.tallas || [],
@@ -31,59 +29,53 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
       }
     };
 
+    const cargarColoresYTallas = async () => {
+      const coloresSnapshot = await getDocs(collection(db, 'colores'));
+      const tallasSnapshot = await getDocs(collection(db, 'tallas'));
+      setColoresDisponibles(coloresSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
+      setTallasDisponibles(tallasSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
+    };
+
     const cargarCategorias = async () => {
       const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
-      const categorias = categoriasSnapshot.docs.map(doc => ({
+      const categorias = categoriasSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       setCategoriasDisponibles(categorias);
     };
 
     cargarDatos();
+    cargarColoresYTallas();
     cargarCategorias();
   }, [valores.id, setValores]);
 
   const agregarColor = async () => {
     const color = nuevoColor.trim();
-    if (color && !coloresDisponibles.map(c => c.valor).includes(color)) {
-      const coloresActualizados = [...coloresDisponibles, { valor: color }];
-      setColoresDisponibles(coloresActualizados);
-      setValores({ ...valores, colores: coloresActualizados.map(c => c.valor) });
-      setNuevoColor('');
-
-      if (valores.id) {
-        try {
-          await updateDoc(doc(db, 'productos', valores.id), { colores: coloresActualizados.map(c => c.valor) });
-          setMensaje(`Color ${color} agregado exitosamente.`);
-        } catch (error) {
-          console.error("Error al actualizar el color:", error);
-          setMensaje("Error al agregar el color.");
-        }
-      } else {
-        console.error("No se puede actualizar, falta el ID del producto.");
+    if (color && !coloresDisponibles.map((c) => c.valor).includes(color)) {
+      try {
+        const nuevoDocRef = await addDoc(collection(db, 'colores'), { valor: color });
+        setColoresDisponibles([...coloresDisponibles, { id: nuevoDocRef.id, valor: color }]);
+        setMensaje(`Color ${color} agregado exitosamente.`);
+        setNuevoColor('');
+      } catch (error) {
+        console.error("Error al agregar el color:", error);
+        setMensaje("Error al agregar el color.");
       }
     }
   };
 
   const agregarTalla = async () => {
     const talla = nuevaTalla.trim();
-    if (talla && !tallasDisponibles.map(t => t.valor).includes(talla)) {
-      const tallasActualizadas = [...tallasDisponibles, { valor: talla }];
-      setTallasDisponibles(tallasActualizadas);
-      setValores({ ...valores, tallas: tallasActualizadas.map(t => t.valor) });
-      setNuevaTalla('');
-
-      if (valores.id) {
-        try {
-          await updateDoc(doc(db, 'productos', valores.id), { tallas: tallasActualizadas.map(t => t.valor) });
-          setMensaje(`Talla ${talla} agregada exitosamente.`);
-        } catch (error) {
-          console.error("Error al actualizar la talla:", error);
-          setMensaje("Error al agregar la talla.");
-        }
-      } else {
-        console.error("No se puede actualizar, falta el ID del producto.");
+    if (talla && !tallasDisponibles.map((t) => t.valor).includes(talla)) {
+      try {
+        const nuevoDocRef = await addDoc(collection(db, 'tallas'), { valor: talla });
+        setTallasDisponibles([...tallasDisponibles, { id: nuevoDocRef.id, valor: talla }]);
+        setMensaje(`Talla ${talla} agregada exitosamente.`);
+        setNuevaTalla('');
+      } catch (error) {
+        console.error("Error al agregar la talla:", error);
+        setMensaje("Error al agregar la talla.");
       }
     }
   };
@@ -118,11 +110,11 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                         key={index}
                         type="checkbox"
                         label={color.valor}
-                        checked={valores.colores.includes(color.valor)}
+                        checked={(valores.colores || []).includes(color.valor)}
                         onChange={() => {
-                          const actualizados = valores.colores.includes(color.valor)
+                          const actualizados = (valores.colores || []).includes(color.valor)
                             ? valores.colores.filter((c) => c !== color.valor)
-                            : [...valores.colores, color.valor];
+                            : [...(valores.colores || []), color.valor];
                           setValores({ ...valores, colores: actualizados });
                         }}
                         inline
@@ -149,11 +141,11 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                         key={index}
                         type="checkbox"
                         label={talla.valor}
-                        checked={valores.tallas.includes(talla.valor)}
+                        checked={(valores.tallas || []).includes(talla.valor)}
                         onChange={() => {
-                          const actualizados = valores.tallas.includes(talla.valor)
+                          const actualizados = (valores.tallas || []).includes(talla.valor)
                             ? valores.tallas.filter((t) => t !== talla.valor)
-                            : [...valores.tallas, talla.valor];
+                            : [...(valores.tallas || []), talla.valor];
                           setValores({ ...valores, tallas: actualizados });
                         }}
                         inline
