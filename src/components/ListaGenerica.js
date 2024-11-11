@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button } from 'react-bootstrap';
 import BarraBusqueda from './BarraBusqueda';
+import '../styles/ListaGenerica.css';
 
 const ListaGenerica = ({ datos, columnas, onEditar, onEliminar }) => {
   const [busqueda, setBusqueda] = useState('');

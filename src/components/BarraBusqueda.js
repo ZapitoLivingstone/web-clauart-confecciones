@@ -1,13 +1,14 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '../styles/BarraBusqueda.css'; 
 
 const BarraBusqueda = ({ placeholder, busqueda, onBusquedaChange, opciones, categoriaSeleccionada, onCategoriaChange }) => {
   return (
-    <div className="row mb-4">
+    <div className="search-container">
       <div className="col-md-6">
         <input
           type="text"
-          className="form-control"
+          className="form-control search-input"
           placeholder={placeholder}
           value={busqueda}
           onChange={(e) => onBusquedaChange(e.target.value)}
@@ -17,7 +18,7 @@ const BarraBusqueda = ({ placeholder, busqueda, onBusquedaChange, opciones, cate
       {opciones && (
         <div className="col-md-6">
           <select
-            className="form-select"
+            className="form-select category-dropdown"
             value={categoriaSeleccionada}
             onChange={(e) => onCategoriaChange(e.target.value)}
           >

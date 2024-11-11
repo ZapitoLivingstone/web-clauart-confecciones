@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Inicio from './screens/Inicio';
-import './styles/style.css';
 import InicioSesion from './screens/InicioSesion';
 import Registro from './screens/Registro';
 import Carrito from './screens/Carrito';

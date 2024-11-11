@@ -1,0 +1,70 @@
+.header {
+    padding: 20px;
+    background-color: #007bff;
+}
+
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title h1 {
+    font-size: 2em; /* Tamaño del título */
+    margin-bottom: 0.5em; /* Espacio inferior del título */
+}
+
+.header-title p {
+    font-size: 1em; /* Tamaño del subtítulo */
+    margin-bottom: 0; /* Sin margen inferior */
+}
+
+/* Estilos para los enlaces del encabezado */
+.header-links {
+
+    align-items: center;
+}
+
+/* Estilo para los enlaces */
+.header-links a {
+    color: black; /* Color de los enlaces */
+    margin-right: 15px; /* Espacio entre los enlaces */
+    text-decoration: none; /* Sin subrayado */
+    font-size: 1em; /* Tamaño de fuente uniforme para todos los enlaces */
+}
+
+/* Estilo para el botón de cierre de sesión */
+.header-links .btn {
+    margin-left: 10px; /* Espacio a la izquierda del botón */
+}
+
+/* Estilo para el dropdown */
+.header-links .dropdown-menu {
+    min-width: 200px; /* Ancho mínimo del menú desplegable */
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column; /* Apila los elementos en columna en pantallas pequeñas */
+        align-items: flex-start; /* Alinea los elementos al inicio */
+    }
+
+    .header-title h1 {
+        font-size: 1.5em; /* Tamaño del título en pantallas pequeñas */
+    }
+
+    .header-title p {
+        font-size: 0.9em; /* Tamaño del subtítulo en pantallas pequeñas */
+    }
+
+    .header-links {
+        flex-wrap: wrap; /* Permite que los enlaces se envuelvan en varias líneas */
+        margin-top: 10px; /* Espacio superior para separar de los títulos */
+    }
+
+    .header-links a {
+        margin-right: 10px; /* Espacio entre los enlaces en pantallas pequeñas */
+    }
+}

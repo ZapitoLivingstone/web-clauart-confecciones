@@ -7,6 +7,7 @@ import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
 import Validaciones from './Validaciones';
 
+
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);

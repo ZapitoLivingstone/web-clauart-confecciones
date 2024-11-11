@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import '../styles/Header.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Header = () => {
@@ -77,13 +78,13 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-primary text-white py-4">
-      <div className="container d-flex justify-content-between align-items-center">
-        <div>
+    <header className="header bg-primary text-white py-4">
+      <div className="header-container container d-flex justify-content-between align-items-center">
+        <div className="header-title">
           <h1 className="m-0">{headerText.title}</h1>
           <p className="m-0">{headerText.subtitle}</p>
         </div>
-        <div>
+        <div className="header-links">
           <Link to="/" className="text-white me-3">Inicio</Link>
 
           {isLoggedIn ? (

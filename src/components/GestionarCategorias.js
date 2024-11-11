@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormularioGenerico from './FormularioGenerico';
 import ListaGenerica from './ListaGenerica';
+import ModalGenerico from './ModalGenerico';
 import { db } from '../firebase';
 import { collection, getDocs, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import Validaciones from './Validaciones';
@@ -9,7 +10,10 @@ const GestionarCategorias = () => {
   const [categorias, setCategorias] = useState([]);
   const [valores, setValores] = useState({ nombre: '', descripcion: '' });
   const [isEditing, setIsEditing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedCategoria, setSelectedCategoria] = useState(null);
+  const [modalType, setModalType] = useState(''); // 'edit' or 'delete'
 
   useEffect(() => {
     const cargarCategorias = async () => {
@@ -48,19 +52,36 @@ const GestionarCategorias = () => {
     setValores({ nombre: '', descripcion: '' });
     setErrors({});
     setIsEditing(false);
+    setShowModal(false);
   };
 
   const handleEditar = (categoria) => {
     setValores(categoria);
     setIsEditing(true);
+    setModalType('edit');
+    setShowModal(true);
   };
 
-  const handleEliminar = async (categoria) => {
-    const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar la categoría ${categoria.nombre}?`);
-    if (confirmDelete) {
-      await deleteDoc(doc(db, 'categorias', categoria.id));
-      setCategorias(categorias.filter((cat) => cat.id !== categoria.id));
+  const handleEliminar = async () => {
+    if (selectedCategoria) {
+      await deleteDoc(doc(db, 'categorias', selectedCategoria.id));
+      setCategorias(categorias.filter((cat) => cat.id !== selectedCategoria.id));
     }
+    setShowModal(false);
+    setSelectedCategoria(null);
+  };
+
+  const handleOpenDeleteModal = (categoria) => {
+    setSelectedCategoria(categoria);
+    setModalType('delete');
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setValores({ nombre: '', descripcion: '' });
+    setSelectedCategoria(null);
+    setIsEditing(false);
   };
 
   return (
@@ -69,13 +90,17 @@ const GestionarCategorias = () => {
         titulo={isEditing ? 'Editar Categoría' : 'Agregar Nueva Categoría'}
         campos={[
           { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text', error: errors.nombre },
-          { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'text'},
+          { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'text' },
         ]}
         valores={valores}
         setValores={setValores}
-        onSubmit={handleAgregar}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setModalType('edit');
+          setShowModal(true);
+        }}
       />
-    
+
       <ListaGenerica
         datos={categorias}
         columnas={[
@@ -83,8 +108,31 @@ const GestionarCategorias = () => {
           { nombre: 'descripcion', etiqueta: 'Descripción' },
         ]}
         onEditar={handleEditar}
-        onEliminar={handleEliminar}
+        onEliminar={handleOpenDeleteModal}
       />
+
+      <ModalGenerico
+        show={showModal}
+        handleClose={handleCloseModal}
+        title={modalType === 'delete' ? 'Confirmar Eliminación' : 'Editar Categoría'}
+        handleConfirm={modalType === 'delete' ? handleEliminar : handleAgregar}
+        confirmText={modalType === 'delete' ? 'Eliminar' : 'Guardar'}
+      >
+        {modalType === 'delete' ? (
+          <p>¿Estás seguro de que deseas eliminar la categoría "{selectedCategoria?.nombre}"?</p>
+        ) : (
+          <FormularioGenerico
+            titulo="Editar Categoría"
+            campos={[
+              { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text', error: errors.nombre },
+              { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'text' },
+            ]}
+            valores={valores}
+            setValores={setValores}
+            onSubmit={handleAgregar}
+          />
+        )}
+      </ModalGenerico>
     </div>
   );
 };
