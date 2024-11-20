@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Asegúrate de que la ruta sea correcta
 import '../styles/Header.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -46,35 +45,57 @@ const Header = () => {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          setIsLoggedIn(true);
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setIsAdmin(userData.rol === 'admin');
-          }
-        } else {
-          setIsLoggedIn(false);
-          setIsAdmin(false);
+      try {
+        const { data: user, error } = await supabase.auth.getUser();
+    
+        if (error) {
+          console.error('Error al obtener usuario:', error);
+          return;
         }
-      });
+    
+        if (user) {
+          // Aquí puedes acceder a los datos del usuario y manejar roles o cualquier otra lógica.
+          console.log('Usuario autenticado:', user);
+          // Lógica adicional según sea necesario
+        }
+      } catch (err) {
+        console.error('Error al ejecutar fetchUserRole:', err);
+      }
     };
 
     fetchUserRole();
-  }, []);
 
-  const handleLogout = () => {
-    auth.signOut()
-      .then(() => {
+    // Escuchar cambios en la sesión
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setIsLoggedIn(true);
+        const { data, error } = await supabase
+          .from('users')
+          .select('rol')
+          .eq('id', session.user.id)
+          .single();
+        if (error) {
+          console.error('Error al obtener el rol:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data.rol === 'admin');
+        }
+      } else {
         setIsLoggedIn(false);
         setIsAdmin(false);
-        navigate('/InicioSesion');
-      })
-      .catch((error) => {
-        console.error("Error al cerrar sesión:", error);
-      });
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut(); // Cerrar sesión con Supabase
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      navigate('/InicioSesion');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   return (

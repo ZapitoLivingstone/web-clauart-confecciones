@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage } from '../firebase';
-import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { supabase } from '../supabase';  // Asegúrate de configurar el cliente de Supabase en otro archivo
 import FormularioGenerico from './FormularioGenerico';
 import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
 import Validaciones from './Validaciones';
-
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
@@ -33,20 +30,43 @@ const GestionarProductos = () => {
   }, []);
 
   const cargarProductos = async () => {
-    const productosSnapshot = await getDocs(collection(db, 'productos'));
-    setProductos(productosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const { data: productosData, error } = await supabase
+      .from('productos')
+      .select('*');
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setProductos(productosData);
+    }
   };
 
   const cargarCategorias = async () => {
-    const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
-    setCategorias(categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const { data: categoriasData, error } = await supabase
+      .from('categorias')
+      .select('*');
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setCategorias(categoriasData);
+    }
   };
 
   const cargarColoresYTallas = async () => {
-    const coloresSnapshot = await getDocs(collection(db, 'colores'));
-    const tallasSnapshot = await getDocs(collection(db, 'tallas'));
-    setColoresDisponibles(coloresSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
-    setTallasDisponibles(tallasSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
+    const { data: coloresData, error: coloresError } = await supabase
+      .from('colores')
+      .select('*');
+    const { data: tallasData, error: tallasError } = await supabase
+      .from('tallas')
+      .select('*');
+    
+    if (coloresError || tallasError) {
+      console.error(coloresError, tallasError);
+    } else {
+      setColoresDisponibles(coloresData);
+      setTallasDisponibles(tallasData);
+    }
   };
 
   const validarFormulario = () => {
@@ -65,15 +85,33 @@ const GestionarProductos = () => {
 
     let imgUrl = '';
     if (imagen) {
-      const imgRef = ref(storage, `productos/${imagen.name}`);
-      await uploadBytes(imgRef, imagen);
-      imgUrl = await getDownloadURL(imgRef);
+      const { data, error } = await supabase
+        .storage
+        .from('productos')
+        .upload(`productos/${imagen.name}`, imagen);
+      
+      if (error) {
+        console.error(error);
+      } else {
+        const { publicURL } = supabase.storage.from('productos').getPublicUrl(data.path);
+        imgUrl = publicURL;
+      }
     }
 
-    await addDoc(collection(db, 'productos'), { ...nuevoProducto, img_url: imgUrl });
-    setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
-    setImagen(null);
-    cargarProductos();
+    const { error } = await supabase
+      .from('productos')
+      .insert([{ 
+        ...nuevoProducto, 
+        img_url: imgUrl 
+      }]);
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
+      setImagen(null);
+      cargarProductos();
+    }
   };
 
   const handleEditarProducto = (producto) => {
@@ -94,24 +132,48 @@ const GestionarProductos = () => {
 
   const actualizarProducto = async () => {
     if (!validarFormulario()) return;
-    
+
     let imgUrl = modalConfig.producto.img_url;
     if (imagen) {
-      const imgRef = ref(storage, `productos/${imagen.name}`);
-      await uploadBytes(imgRef, imagen);
-      imgUrl = await getDownloadURL(imgRef);
+      const { data, error } = await supabase
+        .storage
+        .from('productos')
+        .upload(`productos/${imagen.name}`, imagen);
+      
+      if (error) {
+        console.error(error);
+      } else {
+        const { publicURL } = supabase.storage.from('productos').getPublicUrl(data.path);
+        imgUrl = publicURL;
+      }
     }
 
-    await updateDoc(doc(db, 'productos', modalConfig.producto.id), { ...modalConfig.producto, img_url: imgUrl });
-    setModalConfig({ show: false, mode: '', producto: null });
-    cargarProductos();
+    const { error } = await supabase
+      .from('productos')
+      .update({ ...modalConfig.producto, img_url: imgUrl })
+      .eq('id', modalConfig.producto.id);
+    
+    if (error) {
+      console.error(error);
+    } else {
+      setModalConfig({ show: false, mode: '', producto: null });
+      cargarProductos();
+    }
   };
 
   const eliminarProducto = async () => {
     if (modalConfig.producto) {
-      await deleteDoc(doc(db, 'productos', modalConfig.producto.id));
-      setModalConfig({ show: false, mode: '', producto: null });
-      cargarProductos();
+      const { error } = await supabase
+        .from('productos')
+        .delete()
+        .eq('id', modalConfig.producto.id);
+      
+      if (error) {
+        console.error(error);
+      } else {
+        setModalConfig({ show: false, mode: '', producto: null });
+        cargarProductos();
+      }
     }
   };
 

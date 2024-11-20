@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';  // Asegúrate de que hayas configurado Supabase correctamente
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Validaciones from '../components/Validaciones';
@@ -33,20 +31,32 @@ const Registro = () => {
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await addDoc(collection(db, 'users'), {
-        uid: user.uid,
-        email: user.email,
-        direccion,
-        telefono,
-        fecha_registro: new Date(),
-        rol: 'usuario'
+      // Crear el usuario en Supabase
+      const { user, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
       });
 
+      if (authError) throw authError;
+
+      // Insertar el usuario en la tabla 'users' de Supabase
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert([
+          {
+            uid: user.id,
+            email: user.email,
+            direccion,
+            telefono,
+            fecha_registro: new Date(),
+            rol: 'usuario',
+          },
+        ]);
+
+      if (dbError) throw dbError;
+
       setLoading(false);
-      navigate('/user'); 
+      navigate('/user'); // Redirige a la página de usuario
     } catch (error) {
       console.error('Error en el registro:', error);
       setLoading(false);

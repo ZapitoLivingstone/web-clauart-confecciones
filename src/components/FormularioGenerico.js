@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { db } from '../firebase';
-import { doc, getDoc, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onImageChange }) => {
   const [nuevoColor, setNuevoColor] = useState('');
@@ -14,35 +13,49 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
   useEffect(() => {
     const cargarDatos = async () => {
       if (valores.id) {
-        const docRef = doc(db, 'productos', valores.id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('id', valores.id)
+          .single();
+
+        if (error) {
+          console.error('Error al cargar el producto:', error);
+        } else {
           setValores((prev) => ({
             ...prev,
             colores: data.colores || [],
             tallas: data.tallas || [],
           }));
-        } else {
-          console.error("No se encontró el documento del producto.");
         }
       }
     };
 
     const cargarColoresYTallas = async () => {
-      const coloresSnapshot = await getDocs(collection(db, 'colores'));
-      const tallasSnapshot = await getDocs(collection(db, 'tallas'));
-      setColoresDisponibles(coloresSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
-      setTallasDisponibles(tallasSnapshot.docs.map((doc) => ({ id: doc.id, valor: doc.data().valor })));
+      const { data: colores, error: errorColores } = await supabase.from('colores').select('*');
+      const { data: tallas, error: errorTallas } = await supabase.from('tallas').select('*');
+
+      if (errorColores) {
+        console.error('Error al cargar colores:', errorColores);
+      } else {
+        setColoresDisponibles(colores || []);
+      }
+
+      if (errorTallas) {
+        console.error('Error al cargar tallas:', errorTallas);
+      } else {
+        setTallasDisponibles(tallas || []);
+      }
     };
 
     const cargarCategorias = async () => {
-      const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
-      const categorias = categoriasSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setCategoriasDisponibles(categorias);
+      const { data: categorias, error } = await supabase.from('categorias').select('*');
+
+      if (error) {
+        console.error('Error al cargar categorías:', error);
+      } else {
+        setCategoriasDisponibles(categorias || []);
+      }
     };
 
     cargarDatos();
@@ -51,62 +64,64 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
   }, [valores.id, setValores]);
 
   const agregarColor = async () => {
-    const color = nuevoColor.trim();
-    if (color && !coloresDisponibles.map((c) => c.valor).includes(color)) {
-      try {
-        const nuevoDocRef = await addDoc(collection(db, 'colores'), { valor: color });
-        setColoresDisponibles([...coloresDisponibles, { id: nuevoDocRef.id, valor: color }]);
-        setMensaje(`Color ${color} agregado exitosamente.`);
-        setNuevoColor('');
-      } catch (error) {
-        console.error("Error al agregar el color:", error);
-        setMensaje("Error al agregar el color.");
-      }
+    const { data, error } = await supabase
+      .from('colores')
+      .insert([{ valor: nuevoColor.trim() }]);
+
+    if (error) {
+      console.error('Error al agregar el color:', error);
+      setMensaje('Error al agregar el color.');
+    } else {
+      setColoresDisponibles([...coloresDisponibles, data[0]]);
+      setMensaje(`Color "${nuevoColor}" agregado exitosamente.`);
+      setNuevoColor('');
     }
   };
 
   const agregarTalla = async () => {
-    const talla = nuevaTalla.trim();
-    if (talla && !tallasDisponibles.map((t) => t.valor).includes(talla)) {
-      try {
-        const nuevoDocRef = await addDoc(collection(db, 'tallas'), { valor: talla });
-        setTallasDisponibles([...tallasDisponibles, { id: nuevoDocRef.id, valor: talla }]);
-        setMensaje(`Talla ${talla} agregada exitosamente.`);
-        setNuevaTalla('');
-      } catch (error) {
-        console.error("Error al agregar la talla:", error);
-        setMensaje("Error al agregar la talla.");
-      }
+    const { data, error } = await supabase
+      .from('tallas')
+      .insert([{ valor: nuevaTalla.trim() }]);
+
+    if (error) {
+      console.error('Error al agregar la talla:', error);
+      setMensaje('Error al agregar la talla.');
+    } else {
+      setTallasDisponibles([...tallasDisponibles, data[0]]);
+      setMensaje(`Talla "${nuevaTalla}" agregada exitosamente.`);
+      setNuevaTalla('');
     }
   };
 
   const eliminarColor = async (colorId, colorValor) => {
-    try {
-      await deleteDoc(doc(db, 'colores', colorId));
+    const { error } = await supabase.from('colores').delete().eq('id', colorId);
+
+    if (error) {
+      console.error('Error al eliminar el color:', error);
+      setMensaje('Error al eliminar el color.');
+    } else {
       setColoresDisponibles(coloresDisponibles.filter((c) => c.id !== colorId));
       setValores({
         ...valores,
         colores: (valores.colores || []).filter((c) => c !== colorValor),
       });
-      setMensaje(`Color ${colorValor} eliminado.`);
-    } catch (error) {
-      console.error("Error al eliminar el color:", error);
-      setMensaje("Error al eliminar el color.");
+      setMensaje(`Color "${colorValor}" eliminado.`);
     }
   };
 
   const eliminarTalla = async (tallaId, tallaValor) => {
-    try {
-      await deleteDoc(doc(db, 'tallas', tallaId));
+    const { error } = await supabase.from('tallas').delete().eq('id', tallaId);
+
+    if (error) {
+      console.error('Error al eliminar la talla:', error);
+      setMensaje('Error al eliminar la talla.');
+    } else {
       setTallasDisponibles(tallasDisponibles.filter((t) => t.id !== tallaId));
       setValores({
         ...valores,
         tallas: (valores.tallas || []).filter((t) => t !== tallaValor),
       });
-      setMensaje(`Talla ${tallaValor} eliminada.`);
-    } catch (error) {
-      console.error("Error al eliminar la talla:", error);
-      setMensaje("Error al eliminar la talla.");
+      setMensaje(`Talla "${tallaValor}" eliminada.`);
     }
   };
 
@@ -226,7 +241,9 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
             {campo.error && <div className="invalid-feedback">{campo.error}</div>}
           </Form.Group>
         ))}
-        <Button type="submit">Agregar</Button>
+        <Button type="submit" variant="primary">
+          Guardar
+        </Button>
       </Form>
     </div>
   );

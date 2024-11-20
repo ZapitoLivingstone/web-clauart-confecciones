@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FormularioGenerico from './FormularioGenerico';
 import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
-import { db } from '../firebase';
-import { collection, getDocs, doc, deleteDoc, setDoc } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Asegúrate de configurar tu cliente Supabase en un archivo separado
 import Validaciones from './Validaciones';
 
 const GestionarCategorias = () => {
@@ -15,11 +14,15 @@ const GestionarCategorias = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
   const [modalType, setModalType] = useState(''); // 'edit' or 'delete'
 
+  // Cargar categorías al iniciar el componente
   useEffect(() => {
     const cargarCategorias = async () => {
-      const querySnapshot = await getDocs(collection(db, 'categorias'));
-      const categoriasData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setCategorias(categoriasData);
+      const { data, error } = await supabase.from('categorias').select();
+      if (error) {
+        console.error('Error al cargar categorías:', error);
+      } else {
+        setCategorias(data);
+      }
     };
 
     cargarCategorias();
@@ -38,15 +41,30 @@ const GestionarCategorias = () => {
     if (!validarFormulario()) return;
 
     if (isEditing) {
-      await setDoc(doc(db, 'categorias', valores.id), valores);
-      setCategorias((prevCategorias) =>
-        prevCategorias.map((cat) => (cat.id === valores.id ? { ...cat, ...valores } : cat))
-      );
+      // Actualizar categoría
+      const { error } = await supabase
+        .from('categorias')
+        .update({ nombre: valores.nombre, descripcion: valores.descripcion })
+        .eq('id', valores.id);
+
+      if (error) {
+        console.error('Error al actualizar categoría:', error);
+      } else {
+        setCategorias((prevCategorias) =>
+          prevCategorias.map((cat) => (cat.id === valores.id ? { ...cat, ...valores } : cat))
+        );
+      }
     } else {
-      const nuevaCategoria = { nombre: valores.nombre, descripcion: valores.descripcion };
-      const docRef = doc(collection(db, 'categorias'));
-      await setDoc(docRef, nuevaCategoria);
-      setCategorias([...categorias, { id: docRef.id, ...nuevaCategoria }]);
+      // Agregar nueva categoría
+      const { data, error } = await supabase
+        .from('categorias')
+        .insert([{ nombre: valores.nombre, descripcion: valores.descripcion }]);
+
+      if (error) {
+        console.error('Error al agregar categoría:', error);
+      } else {
+        setCategorias([...categorias, ...data]);
+      }
     }
 
     setValores({ nombre: '', descripcion: '' });
@@ -64,8 +82,16 @@ const GestionarCategorias = () => {
 
   const handleEliminar = async () => {
     if (selectedCategoria) {
-      await deleteDoc(doc(db, 'categorias', selectedCategoria.id));
-      setCategorias(categorias.filter((cat) => cat.id !== selectedCategoria.id));
+      const { error } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('id', selectedCategoria.id);
+
+      if (error) {
+        console.error('Error al eliminar categoría:', error);
+      } else {
+        setCategorias(categorias.filter((cat) => cat.id !== selectedCategoria.id));
+      }
     }
     setShowModal(false);
     setSelectedCategoria(null);

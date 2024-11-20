@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HeaderAdmin from '../components/HeaderAdmin';
-import { db } from '../firebase';
-import { getDocs, collection, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Importamos el cliente de Supabase
 import ModalGenerico from '../components/ModalGenerico';
 import BarraBusqueda from '../components/BarraBusqueda';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -22,67 +21,59 @@ const Pedidos = () => {
 
   const formatDate = (fecha) => {
     if (!fecha) return 'Fecha desconocida';
-  
-    if (fecha instanceof Timestamp) {
-      const date = fecha.toDate();
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    } else if (typeof fecha === 'string') {
-      const date = new Date(fecha);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-  
-    return 'Fecha desconocida';
+    const date = new Date(fecha);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
-  
+
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        const pedidosSnapshot = await getDocs(collection(db, 'pedidos'));
-        const pedidosData = pedidosSnapshot.docs.map((pedidoDoc) => {
-          const data = pedidoDoc.data();
-          return {
-            docId: pedidoDoc.id,
-            ...data,
-            fecha: formatDate(data.fechaPedido), // Usar la función para formatear la fecha
-            nombreProducto: data.nombre || 'Producto desconocido',
-          };
-        });
-        setPedidos(pedidosData);
-      
-        const usuariosSnapshot = await getDocs(collection(db, 'users'));
-        const usuariosData = {};
-        usuariosSnapshot.docs.forEach((usuarioDoc) => {
-          const uid = usuarioDoc.id;
-          const data = usuarioDoc.data();
-          usuariosData[uid] = {
-            nombre: data.nombre || 'Usuario desconocido',
-            direccion: data.direccion || '',
-            telefono: data.telefono || '',
-          };
-        });
-        setUsuarios(usuariosData);
+        // Obtener pedidos desde Supabase
+        const { data: pedidosData, error: pedidosError } = await supabase
+          .from('pedidos')
+          .select('*');
+        if (pedidosError) throw pedidosError;
+
+        const pedidosConFecha = pedidosData.map((pedido) => ({
+          ...pedido,
+          fecha: formatDate(pedido.fechaPedido),
+        }));
+        setPedidos(pedidosConFecha);
+
+        // Obtener usuarios desde Supabase
+        const { data: usuariosData, error: usuariosError } = await supabase
+          .from('users')
+          .select('*');
+        if (usuariosError) throw usuariosError;
+
+        const usuariosMap = usuariosData.reduce((acc, user) => {
+          acc[user.id] = user;
+          return acc;
+        }, {});
+        setUsuarios(usuariosMap);
       } catch (error) {
         console.error('Error al cargar los datos:', error);
       }
     };
-  
+
     cargarDatos();
   }, []);
-  
 
   const actualizarEstadoPedido = async (docId, nuevoEstado) => {
     try {
-      const pedidoRef = doc(db, 'pedidos', docId);
-      await updateDoc(pedidoRef, { estado: nuevoEstado });
+      const { error } = await supabase
+        .from('pedidos')
+        .update({ estado: nuevoEstado })
+        .match({ id: docId });
+
+      if (error) throw error;
+
       setPedidos((prevPedidos) =>
         prevPedidos.map((pedido) =>
-          pedido.docId === docId ? { ...pedido, estado: nuevoEstado } : pedido
+          pedido.id === docId ? { ...pedido, estado: nuevoEstado } : pedido
         )
       );
     } catch (error) {
@@ -94,9 +85,14 @@ const Pedidos = () => {
     if (!selectedPedidoId) return;
 
     try {
-      const pedidoRef = doc(db, 'pedidos', selectedPedidoId);
-      await deleteDoc(pedidoRef);
-      setPedidos((prevPedidos) => prevPedidos.filter((pedido) => pedido.docId !== selectedPedidoId));
+      const { error } = await supabase
+        .from('pedidos')
+        .delete()
+        .match({ id: selectedPedidoId });
+
+      if (error) throw error;
+
+      setPedidos((prevPedidos) => prevPedidos.filter((pedido) => pedido.id !== selectedPedidoId));
       setShowModal(false);
     } catch (error) {
       console.error('Error al eliminar el pedido:', error);
@@ -124,7 +120,7 @@ const Pedidos = () => {
         />
         <div className="row">
           {pedidosFiltrados.map((pedido, index) => (
-            <div key={pedido.docId} className="col-md-4 mb-4">
+            <div key={pedido.id} className="col-md-4 mb-4">
               <div className="card">
                 <div className="card-body">
                   <h5 className="card-title">{pedido.nombreProducto}</h5>
@@ -139,7 +135,7 @@ const Pedidos = () => {
                   <p className="card-text">Color: {pedido.color}</p>
                   <p className="card-text">Tamaño: {pedido.size}</p>
                   <p className="card-text">Texto Personalizado: {pedido.customText}</p>
-                  <p className="card-text">Fecha del Pedido: {pedido.fecha}</p> {/* Muestra la fecha */}
+                  <p className="card-text">Fecha del Pedido: {pedido.fecha}</p>
 
                   <div className="mb-3">
                     <label htmlFor={`estadoSelect${index}`} className="form-label">Estado del Pedido</label>
@@ -147,7 +143,7 @@ const Pedidos = () => {
                       id={`estadoSelect${index}`}
                       className="form-select"
                       value={pedido.estado || 'pendiente'}
-                      onChange={(e) => actualizarEstadoPedido(pedido.docId, e.target.value)}
+                      onChange={(e) => actualizarEstadoPedido(pedido.id, e.target.value)}
                     >
                       <option value="pendiente">Pendiente</option>
                       <option value="proceso">En Proceso</option>
@@ -158,7 +154,7 @@ const Pedidos = () => {
                   <button
                     className="btn btn-danger"
                     onClick={() => {
-                      setSelectedPedidoId(pedido.docId);
+                      setSelectedPedidoId(pedido.id);
                       setShowModal(true);
                     }}
                   >

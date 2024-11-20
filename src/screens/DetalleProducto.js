@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'; 
-import { db } from '../firebase';
+import { supabase } from '../supabase'; // Asegúrate de importar la configuración de Supabase
 import Header from '../components/Header';
 
 const DetalleProducto = () => {
-  const { productoId } = useParams(); 
+  const { productoId } = useParams();
   const [producto, setProducto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,14 +22,16 @@ const DetalleProducto = () => {
       }
 
       try {
-        const productoRef = doc(db, 'productos', productoId);
-        const productoSnapshot = await getDoc(productoRef);
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('id', productoId)
+          .single(); // Usamos single() ya que se espera solo un producto
 
-        if (productoSnapshot.exists()) {
-          const data = productoSnapshot.data();
-          setProducto({ id: productoSnapshot.id, ...data });
+        if (error) {
+          setError("Error al obtener el producto: " + error.message);
         } else {
-          setError("El producto no existe");
+          setProducto(data);
         }
       } catch (error) {
         handleError(error, "Error al obtener el producto");
@@ -63,25 +64,32 @@ const DetalleProducto = () => {
     if (!producto || !validarProducto()) return;
 
     setIsLoading(true);
-    
+
     const productoPersonalizado = {
-      productoId: producto.id,
+      producto_id: producto.id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precio: producto.precio,
       color,
       size,
-      customText,
-      fechaAgregado: serverTimestamp(), // Ahora usando serverTimestamp para formato correcto
+      custom_text: customText,
+      fecha_agregado: new Date(), // Usamos la fecha actual
       img_url: producto.img_url
     };
 
     try {
-      await addDoc(collection(db, 'carrito'), productoPersonalizado);
-      alert('Producto agregado al carrito exitosamente');
-      setColor('');
-      setSize('');
-      setCustomText('');
+      const { error } = await supabase
+        .from('carrito')
+        .insert([productoPersonalizado]);
+
+      if (error) {
+        handleError(error, "Error al agregar al carrito");
+      } else {
+        alert('Producto agregado al carrito exitosamente');
+        setColor('');
+        setSize('');
+        setCustomText('');
+      }
     } catch (error) {
       handleError(error, "Error al agregar al carrito");
     } finally {

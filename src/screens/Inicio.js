@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import CardProductos from '../components/CardProductos';
 import BarraBusqueda from '../components/BarraBusqueda';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Asegúrate de haber configurado correctamente la instancia de Supabase
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Inicio = () => {
@@ -13,27 +12,35 @@ const Inicio = () => {
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    const cargarProductos = async () => {
-      const productosSnapshot = await getDocs(collection(db, 'productos'));
-      const productosData = productosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setProductos(productosData);
+    const cargarDatos = async () => {
+      try {
+        // Cargar productos
+        const { data: productosData, error: productosError } = await supabase
+          .from('productos')
+          .select('*');
+        if (productosError) throw productosError;
+        setProductos(productosData);
+
+        // Cargar categorías
+        const { data: categoriasData, error: categoriasError } = await supabase
+          .from('categorias')
+          .select('*');
+        if (categoriasError) throw categoriasError;
+        setCategorias(categoriasData);
+      } catch (error) {
+        console.error('Error cargando datos:', error.message);
+      }
     };
 
-    const cargarCategorias = async () => {
-      const categoriasSnapshot = await getDocs(collection(db, 'categorias'));
-      const categoriasData = categoriasSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setCategorias(categoriasData);
-    };
-
-    cargarProductos();
-    cargarCategorias();
+    cargarDatos();
   }, []);
 
   const productosFiltrados = productos.filter((producto) => {
     const coincideCategoria = categoriaSeleccionada
-      ? producto.categoria === categoriaSeleccionada
+      ? producto.categoria_id === categoriaSeleccionada
       : true;
-    const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    const coincideBusqueda =
+      producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
       producto.descripcion.toLowerCase().includes(busqueda.toLowerCase());
     return coincideCategoria && coincideBusqueda;
   });
@@ -43,12 +50,15 @@ const Inicio = () => {
       <Header />
       <div className="container my-5">
         <h2 className="text-center mb-4">Nuestros Productos</h2>
-        
+
         <BarraBusqueda
           placeholder="Buscar productos..."
           busqueda={busqueda}
           onBusquedaChange={setBusqueda}
-          opciones={categorias}
+          opciones={categorias.map((categoria) => ({
+            value: categoria.id,
+            label: categoria.nombre,
+          }))}
           categoriaSeleccionada={categoriaSeleccionada}
           onCategoriaChange={setCategoriaSeleccionada}
         />

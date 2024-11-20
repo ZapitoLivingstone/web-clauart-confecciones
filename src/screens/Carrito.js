@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { db, auth } from '../firebase';
+import { supabase } from '../supabase'; // Asegúrate de tener la configuración de Supabase
 import Header from '../components/Header';
-import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from 'firebase/firestore';
 import ModalGenerico from '../components/ModalGenerico';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -20,9 +19,12 @@ const Carrito = () => {
   const cargarCarrito = useCallback(async () => {
     setIsLoading(true);
     try {
-      const carritoSnapshot = await getDocs(collection(db, 'carrito'));
-      const items = carritoSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setCartItems(items);
+      const { data, error } = await supabase
+        .from('carrito')
+        .select('*');
+
+      if (error) throw error;
+      setCartItems(data);
     } catch (error) {
       handleError(error, "Error al cargar el carrito");
     } finally {
@@ -35,7 +37,7 @@ const Carrito = () => {
   }, [cargarCarrito]);
 
   const confirmOrder = async () => {
-    const user = auth.currentUser;
+    const { user } = supabase.auth.session(); // Obteniendo el usuario actual
     if (!user) {
       alert('Debes iniciar sesión para realizar un pedido');
       return;
@@ -48,19 +50,29 @@ const Carrito = () => {
 
     setIsLoading(true);
     try {
-      const pedidosCollection = collection(db, 'pedidos');
       const pedidosPromises = cartItems.map(async (item) => {
         const pedidoData = {
           ...item,
-          usuarioId: user.uid,
+          usuarioId: user.id,
           fechaPedido: new Date().toISOString(),
           estado: 'pendiente',
         };
 
-        const pedidoRef = await addDoc(pedidosCollection, pedidoData);
-        await deleteDoc(doc(db, 'carrito', item.id));
+        const { data: pedidoDataResponse, error } = await supabase
+          .from('pedidos')
+          .insert([pedidoData]);
+
+        if (error) throw error;
+
+        // Eliminar del carrito
+        const { error: deleteError } = await supabase
+          .from('carrito')
+          .delete()
+          .match({ id: item.id });
+
+        if (deleteError) throw deleteError;
         
-        return pedidoRef;
+        return pedidoDataResponse;
       });
 
       await Promise.all(pedidosPromises);
@@ -90,14 +102,18 @@ const Carrito = () => {
 
   const handleSaveEdit = async () => {
     if (!editItem) return;
-    
+
     try {
-      const itemRef = doc(db, 'carrito', editItem.id);
-      await updateDoc(itemRef, {
-        color: editItem.color,
-        size: editItem.size,
-        cantidad: editItem.cantidad
-      });
+      const { error } = await supabase
+        .from('carrito')
+        .update({
+          color: editItem.color,
+          size: editItem.size,
+          cantidad: editItem.cantidad,
+        })
+        .match({ id: editItem.id });
+
+      if (error) throw error;
 
       setCartItems((prevItems) =>
         prevItems.map((item) =>
@@ -115,7 +131,13 @@ const Carrito = () => {
     if (!editItem) return;
 
     try {
-      await deleteDoc(doc(db, 'carrito', editItem.id));
+      const { error } = await supabase
+        .from('carrito')
+        .delete()
+        .match({ id: editItem.id });
+
+      if (error) throw error;
+
       setCartItems((prevItems) => prevItems.filter((item) => item.id !== editItem.id));
       setEditItem(null);
       setModalAction('');
@@ -126,7 +148,7 @@ const Carrito = () => {
 
   return (
     <>
-      <Header/>
+      <Header />
       <div className="container my-5">
         <h1>Carrito de Compras</h1>
         {cartItems.length > 0 ? (

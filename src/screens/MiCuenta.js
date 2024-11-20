@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Ensure Supabase is configured in this file
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Header from '../components/Header';
 import ModalGenerico from '../components/ModalGenerico';
-import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const MiCuenta = () => {
   const [userData, setUserData] = useState({
@@ -24,14 +22,21 @@ const MiCuenta = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const user = auth.currentUser;
+      const user = supabase.auth.user();
       if (user) {
         try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            setUserData(userDoc.data());
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Error al obtener los datos del usuario:', error);
+            return;
           }
+
+          setUserData(data); // This is now the data received from Supabase
         } catch (error) {
           console.error('Error al obtener los datos del usuario:', error);
         } finally {
@@ -57,28 +62,36 @@ const MiCuenta = () => {
 
   const handleSave = async () => {
     try {
-      const user = auth.currentUser;
+      const user = supabase.auth.user();
       if (user) {
-        // Reautenticar al usuario antes de guardar los cambios
-        const credential = EmailAuthProvider.credential(user.email, authPassword);
-        await reauthenticateWithCredential(user, credential);
+        const { error } = await supabase
+          .from('users')
+          .update(userData)
+          .eq('id', user.id);
 
-        const userDocRef = doc(db, 'users', user.uid);
-        await updateDoc(userDocRef, userData);
+        if (error) {
+          throw error;
+        }
+
         setIsEditing(false);
         alert('Información actualizada correctamente');
       }
     } catch (error) {
       console.error('Error al actualizar los datos del usuario:', error);
-      alert('Error al actualizar la información. Verifica tu contraseña.');
+      alert('Error al actualizar la información.');
     }
   };
 
   const handleEmailChange = async () => {
     try {
-      const user = auth.currentUser;
+      const user = supabase.auth.user();
       if (user) {
-        await updateEmail(user, newEmail);
+        // Update email in Supabase Auth
+        const { error } = await supabase.auth.update({ email: newEmail });
+        if (error) {
+          throw error;
+        }
+
         setUserData((prevData) => ({ ...prevData, email: newEmail }));
         alert('Correo electrónico actualizado correctamente');
         setShowEmailModal(false);
@@ -95,9 +108,14 @@ const MiCuenta = () => {
         alert('Las contraseñas no coinciden');
         return;
       }
-      const user = auth.currentUser;
+
+      const user = supabase.auth.user();
       if (user) {
-        await updatePassword(user, newPassword);
+        const { error } = await supabase.auth.update({ password: newPassword });
+        if (error) {
+          throw error;
+        }
+
         alert('Contraseña actualizada correctamente');
         setShowPasswordModal(false);
       }

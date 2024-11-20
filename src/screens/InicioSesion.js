@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { auth } from '../firebase';
 import { FaGoogle } from 'react-icons/fa';
 import Header from '../components/Header';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { supabase } from '../supabase'; // Importamos la configuración de Supabase
 import '../styles/styleAuth.css';
 
 const InicioSesion = () => {
@@ -13,7 +11,6 @@ const InicioSesion = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const firestore = getFirestore();
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -40,24 +37,39 @@ const InicioSesion = () => {
     if (Object.keys(formErrors).length === 0) {
       setLoading(true);
       try {
-        // Inicio de sesión con email y contraseña
-        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-        const user = userCredential.user;
-        
-        const userRef = doc(firestore, "users", user.uid);
-        const userSnapshot = await getDoc(userRef);
-        
-        if (!userSnapshot.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            displayName: user.displayName || loginEmail, // Puedes usar el email como displayName si no hay otro
-            createdAt: new Date(),
-          });
-          console.log('Nuevo usuario creado en Firestore.');
-        } else {
-          console.log('Usuario ya registrado en Firestore.');
+        // Iniciar sesión con email y contraseña en Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: loginPassword,
+        });
+
+        if (error) {
+          setErrors({ general: 'Error en el inicio de sesión, por favor verifique sus credenciales.' });
+          setLoading(false);
+          return;
         }
-        
+
+        // Verificar si el usuario existe en la tabla 'users'
+        const { error: userError } = await supabase
+          .from('users')
+          .select()
+          .eq('id', data.user.id)
+          .single();
+
+        if (userError) {
+          console.log("Nuevo usuario detectado, creando documento en Supabase...");
+          // Crear un nuevo usuario si no existe
+          await supabase.from('users').insert([{
+            id: data.user.id,
+            email: data.user.email,
+            displayName: data.user.user_metadata.full_name || loginEmail,
+            createdAt: new Date(),
+          }]);
+          console.log('Nuevo usuario creado en Supabase.');
+        } else {
+          console.log('Usuario ya registrado en Supabase.');
+        }
+
         console.log('Inicio de sesión exitoso');
         setLoading(false);
         navigate('/'); // Redirige al inicio después de iniciar sesión
@@ -71,37 +83,44 @@ const InicioSesion = () => {
     }
   };
 
-  // Proveedor de Google
-  const provider = new GoogleAuthProvider();
-
   // Manejar el inicio de sesión con Google
-
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const userRef = doc(firestore, "users", user.uid); // Usar el uid como ID del documento
-      const userSnapshot = await getDoc(userRef);
-  
-      if (!userSnapshot.exists()) {
-        console.log("Nuevo usuario detectado, creando documento en Firestore...");
-        await setDoc(userRef, {
-          email: user.email,
-          nombre: user.displayName,
-          fecha_registro: new Date(),
-          metodo_registro: "google",
-          rol: "usuario", 
-          telefono: "",
-          direccion: ""
-        });
-        console.log('Nuevo usuario creado en Firestore.');
-      } else {
-        console.log('Usuario ya registrado en Firestore.');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) {
+        console.error('Error en el inicio de sesión con Google:', error);
+        setLoading(false);
+        return;
       }
-  
+
+      // Verificar si el usuario existe en la tabla 'users'
+      const { error: userError } = await supabase
+        .from('users')
+        .select()
+        .eq('id', data.user.id)
+        .single();
+
+      if (userError) {
+        console.log("Nuevo usuario detectado, creando documento en Supabase...");
+        // Crear un nuevo usuario si no existe
+        await supabase.from('users').insert([{
+          id: data.user.id,
+          email: data.user.email,
+          displayName: data.user.user_metadata.full_name,
+          createdAt: new Date(),
+          metodo_registro: 'google',
+        }]);
+        console.log('Nuevo usuario creado en Supabase.');
+      } else {
+        console.log('Usuario ya registrado en Supabase.');
+      }
+
       setLoading(false);
-      navigate('/');
+      navigate('/'); // Redirige al inicio después de iniciar sesión
     } catch (error) {
       console.error('Error en el inicio de sesión con Google:', error);
       setLoading(false);

@@ -1,8 +1,6 @@
-// Importaciones de Inventario.js
 import React, { useState, useEffect } from 'react';
 import { Button, Form, Card, Container, Row, Col } from 'react-bootstrap';
-import { db } from '../firebase';
-import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { supabase } from '../supabase'; // Asegúrate de que la configuración de supabase esté importada
 import HeaderAdmin from '../components/HeaderAdmin';
 import BarraBusqueda from '../components/BarraBusqueda';
 import ModalGenerico from '../components/ModalGenerico';
@@ -30,11 +28,17 @@ const Inventario = () => {
     setMaterialesFiltrados(materialesFiltrados);
   }, [busqueda, materiales]);
 
-  // Cargar materiales desde Firebase
+  // Cargar materiales desde Supabase
   const cargarMateriales = async () => {
-    const materialesSnapshot = await getDocs(collection(db, 'materiales'));
-    const listaMateriales = materialesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setMateriales(listaMateriales);
+    const { data, error } = await supabase
+      .from('materiales')  // Reemplaza 'materiales' con el nombre de tu tabla en Supabase
+      .select('*');
+
+    if (error) {
+      console.error("Error al cargar materiales:", error);
+    } else {
+      setMateriales(data);
+    }
   };
 
   // Validar el material antes de agregar
@@ -50,27 +54,50 @@ const Inventario = () => {
   const agregarMaterial = async (e) => {
     e.preventDefault();
     if (validarMaterial()) {
-      await addDoc(collection(db, 'materiales'), nuevoMaterial);
-      setNuevoMaterial({ nombre: '', descripcion: '', stock: '' });
-      setMostrarModalAgregar(false);
-      cargarMateriales();
+      const { error } = await supabase
+        .from('materiales') // Reemplaza 'materiales' con el nombre de tu tabla en Supabase
+        .insert([nuevoMaterial]);
+
+      if (error) {
+        console.error("Error al agregar material:", error);
+      } else {
+        setNuevoMaterial({ nombre: '', descripcion: '', stock: '' });
+        setMostrarModalAgregar(false);
+        cargarMateriales();
+      }
     }
   };
 
   // Actualizar un material existente
   const actualizarMaterial = async () => {
     if (materialSeleccionado) {
-      await updateDoc(doc(db, 'materiales', materialSeleccionado.id), materialSeleccionado);
-      setMaterialSeleccionado(null);
-      setMostrarModalEditar(false);
-      cargarMateriales();
+      const { error } = await supabase
+        .from('materiales')  // Reemplaza 'materiales' con el nombre de tu tabla en Supabase
+        .update(materialSeleccionado)
+        .eq('id', materialSeleccionado.id);  // Asegúrate de tener un campo `id` en tu tabla
+
+      if (error) {
+        console.error("Error al actualizar material:", error);
+      } else {
+        setMaterialSeleccionado(null);
+        setMostrarModalEditar(false);
+        cargarMateriales();
+      }
     }
   };
 
   // Eliminar un material
   const eliminarMaterial = async (materialId) => {
-    await deleteDoc(doc(db, 'materiales', materialId));
-    cargarMateriales();
+    const { error } = await supabase
+      .from('materiales')  // Reemplaza 'materiales' con el nombre de tu tabla en Supabase
+      .delete()
+      .eq('id', materialId); // Asegúrate de tener un campo `id` en tu tabla
+
+    if (error) {
+      console.error("Error al eliminar material:", error);
+    } else {
+      cargarMateriales();
+    }
   };
 
   return (

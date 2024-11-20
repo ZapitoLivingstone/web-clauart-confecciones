@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { auth, db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { supabase } from '../supabase';  // Importa tu instancia de supabase
 import Header from '../components/Header';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -9,31 +8,46 @@ const MisPedidos = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = auth.currentUser;
+    const fetchPedidos = async () => {
+      const user = supabase.auth.user();  // Obtiene el usuario autenticado
 
-    if (user) {
-      const pedidosRef = collection(db, 'pedidos');
-      const q = query(pedidosRef, where('usuarioId', '==', user.uid));
-      
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const pedidosData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          fechaPedido: formatFechaPedido(doc.data().fechaPedido)
-        }));
-        setPedidos(pedidosData);
-        setLoading(false);
-      });
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('pedidos')  // Reemplaza 'pedidos' por el nombre de tu tabla en Supabase
+            .select('*')
+            .eq('usuario_id', user.id);  // Asegúrate de que el campo en Supabase se llame 'usuario_id'
 
-      return () => unsubscribe();
-    }
+          if (error) throw error;
+
+          const pedidosData = data.map((pedido) => ({
+            id: pedido.id,
+            descripcion: pedido.descripcion,
+            color: pedido.color,
+            customText: pedido.custom_text || 'N/A',
+            size: pedido.size,
+            precio: pedido.precio,
+            fechaPedido: formatFechaPedido(pedido.fecha_pedido),  // Ajusta el campo de la fecha si es necesario
+            estado: pedido.estado,
+          }));
+
+          setPedidos(pedidosData);
+        } catch (error) {
+          console.error('Error al obtener los pedidos:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchPedidos();
   }, []);
 
   const formatFechaPedido = (fechaPedido) => {
-    if (fechaPedido && typeof fechaPedido.seconds === 'number') {
-      return new Date(fechaPedido.seconds * 1000).toLocaleDateString();
+    if (fechaPedido) {
+      return new Date(fechaPedido).toLocaleDateString();  // Ajusta si 'fechaPedido' está en formato timestamp
     }
-    return new Date(fechaPedido).toLocaleDateString();
+    return 'Fecha no disponible';
   };
 
   if (loading) {
@@ -66,7 +80,7 @@ const MisPedidos = () => {
                   <tr key={pedido.id}>
                     <td>{pedido.descripcion}</td>
                     <td>{pedido.color}</td>
-                    <td>{pedido.customText || 'N/A'}</td>
+                    <td>{pedido.customText}</td>
                     <td>{pedido.size}</td>
                     <td>${pedido.precio}</td>
                     <td>{pedido.fechaPedido}</td>
