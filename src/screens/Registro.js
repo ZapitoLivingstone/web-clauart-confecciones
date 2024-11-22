@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Validaciones from '../components/Validaciones';
 
 const Registro = () => {
+  const [nombre, setNombre] = useState('');  // Agregar estado para el nombre
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -14,54 +15,80 @@ const Registro = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Validar el formulario
   const validarFormulario = () => {
     const nuevoErrores = {};
+    nuevoErrores.nombre = Validaciones.texto(nombre, 'Nombre');
     nuevoErrores.email = Validaciones.email(email);
     nuevoErrores.password = Validaciones.password(password);
     nuevoErrores.confirmPassword = Validaciones.confirmPassword(confirmPassword, password);
     nuevoErrores.telefono = Validaciones.telefono(telefono);
     nuevoErrores.direccion = Validaciones.direccion(direccion);
+    
     setErrors(nuevoErrores);
     return !Object.values(nuevoErrores).some((error) => error);
   };
+  
 
+  // Manejar el envío del formulario
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!validarFormulario()) return;
-
+  
+    if (!validarFormulario() || loading) return;
+  
     setLoading(true);
+  
     try {
-      // Crear el usuario en Supabase
-      const { user, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      // Insertar el usuario en la tabla 'users' de Supabase
-      const { error: dbError } = await supabase
-        .from('users')
-        .insert([
+      const { data, error: authError } = await supabase.auth.signUp(
+        {
+          email,
+          password,
+        },
+        { autoSignIn: false } // Evita el inicio de sesión automático
+      );
+  
+      if (authError) {
+        if (authError.message.includes('email rate limit exceeded')) {
+          throw new Error('Demasiados intentos de registro. Por favor, intente más tarde.');
+        }
+        throw new Error(authError.message);
+      }
+  
+      const user = data?.user;
+  
+      if (!user) {
+        throw new Error('No se pudo crear el usuario.');
+      }
+  
+      // Insertar datos en la tabla 'usuarios'
+      const { error } = await supabase
+        .from('usuarios')
+        .upsert(
           {
-            uid: user.id,
+            id: user.id,
+            nombre, // Incluir nombre en el registro
             email: user.email,
             direccion,
             telefono,
             fecha_registro: new Date(),
             rol: 'usuario',
           },
-        ]);
-
-      if (dbError) throw dbError;
-
-      setLoading(false);
-      navigate('/user'); // Redirige a la página de usuario
+          { onConflict: 'id' }
+        );
+  
+      if (error) throw new Error(error.message);
+  
+      // Redirigir al formulario de inicio de sesión
+      navigate('/InicioSesion');
     } catch (error) {
-      console.error('Error en el registro:', error);
+      console.error('Registration Error:', error);
+      alert('Error en el registro: ' + (error.message || 'Error desconocido'));
+    } finally {
       setLoading(false);
     }
   };
+  
+  
 
   return (
     <>
@@ -71,6 +98,18 @@ const Registro = () => {
         <div className="col-md-6 offset-md-3">
           <h3 className="text-center">Registrarse</h3>
           <form onSubmit={handleRegisterSubmit} noValidate>
+          <div className="form-group">
+            <label htmlFor="nombre">Nombre</label>
+            <input
+              type="text"
+              className={`form-control ${errors.nombre ? 'is-invalid' : ''}`}
+              id="nombre"
+              placeholder="Ingrese su nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+            {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
+          </div>
             <div className="form-group">
               <label htmlFor="registerEmail">Correo Electrónico</label>
               <input
@@ -130,7 +169,7 @@ const Registro = () => {
               />
               {errors.telefono && <div className="invalid-feedback">{errors.telefono}</div>}
             </div>
-            <button type="submit" className="btn btn-primary btn-block">
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Registrando...' : 'Registrarse'}
             </button>
           </form>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import CardProductos from '../components/CardProductos';
 import BarraBusqueda from '../components/BarraBusqueda';
-import { supabase } from '../supabase'; // Asegúrate de haber configurado correctamente la instancia de Supabase
+import { supabase } from '../supabase'; // Asegúrate de que la configuración de Supabase sea correcta
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Inicio = () => {
@@ -37,7 +37,7 @@ const Inicio = () => {
 
   const productosFiltrados = productos.filter((producto) => {
     const coincideCategoria = categoriaSeleccionada
-      ? producto.categoria_id === categoriaSeleccionada
+      ? producto.categoria_id === parseInt(categoriaSeleccionada, 10)
       : true;
     const coincideBusqueda =
       producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -50,7 +50,6 @@ const Inicio = () => {
       <Header />
       <div className="container my-5">
         <h2 className="text-center mb-4">Nuestros Productos</h2>
-
         <BarraBusqueda
           placeholder="Buscar productos..."
           busqueda={busqueda}
@@ -62,7 +61,6 @@ const Inicio = () => {
           categoriaSeleccionada={categoriaSeleccionada}
           onCategoriaChange={setCategoriaSeleccionada}
         />
-
         <CardProductos productos={productosFiltrados} />
       </div>
     </>

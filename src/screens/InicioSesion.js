@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaGoogle } from 'react-icons/fa';
 import Header from '../components/Header';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../supabase'; // Importamos la configuración de Supabase
+import { supabase } from '../supabase';
 import '../styles/styleAuth.css';
 
 const InicioSesion = () => {
@@ -12,117 +12,60 @@ const InicioSesion = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    
-    let formErrors = {};
 
-    // Validación de email
-    if (!loginEmail) {
-      formErrors.email = 'El correo electrónico es obligatorio.';
-    } else if (!validateEmail(loginEmail)) {
-      formErrors.email = 'El correo electrónico no es válido.';
-    }
-
-    // Validación de contraseña
-    if (!loginPassword) {
-      formErrors.password = 'La contraseña es obligatoria.';
-    }
-
-    if (Object.keys(formErrors).length === 0) {
-      setLoading(true);
-      try {
-        // Iniciar sesión con email y contraseña en Supabase
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: loginPassword,
-        });
-
-        if (error) {
-          setErrors({ general: 'Error en el inicio de sesión, por favor verifique sus credenciales.' });
-          setLoading(false);
-          return;
-        }
-
-        // Verificar si el usuario existe en la tabla 'users'
-        const { error: userError } = await supabase
-          .from('users')
-          .select()
-          .eq('id', data.user.id)
-          .single();
-
-        if (userError) {
-          console.log("Nuevo usuario detectado, creando documento en Supabase...");
-          // Crear un nuevo usuario si no existe
-          await supabase.from('users').insert([{
-            id: data.user.id,
-            email: data.user.email,
-            displayName: data.user.user_metadata.full_name || loginEmail,
-            createdAt: new Date(),
-          }]);
-          console.log('Nuevo usuario creado en Supabase.');
-        } else {
-          console.log('Usuario ya registrado en Supabase.');
-        }
-
-        console.log('Inicio de sesión exitoso');
-        setLoading(false);
-        navigate('/'); // Redirige al inicio después de iniciar sesión
-      } catch (error) {
-        console.error('Error en el inicio de sesión:', error);
-        setErrors({ general: 'Error en el inicio de sesión, por favor verifique sus credenciales.' });
-        setLoading(false);
-      }
-    } else {
-      setErrors(formErrors);
-    }
-  };
-
-  // Manejar el inicio de sesión con Google
-  const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
       });
 
       if (error) {
-        console.error('Error en el inicio de sesión con Google:', error);
+        setErrors({ general: 'Credenciales incorrectas o cuenta no confirmada.' });
         setLoading(false);
         return;
       }
 
-      // Verificar si el usuario existe en la tabla 'users'
-      const { error: userError } = await supabase
-        .from('users')
-        .select()
-        .eq('id', data.user.id)
+      const { error: userError, data: userData } = await supabase
+        .from('usuarios')
+        .select('rol')
+        .eq('email', loginEmail)
         .single();
 
-      if (userError) {
-        console.log("Nuevo usuario detectado, creando documento en Supabase...");
-        // Crear un nuevo usuario si no existe
-        await supabase.from('users').insert([{
-          id: data.user.id,
-          email: data.user.email,
-          displayName: data.user.user_metadata.full_name,
-          createdAt: new Date(),
-          metodo_registro: 'google',
-        }]);
-        console.log('Nuevo usuario creado en Supabase.');
-      } else {
-        console.log('Usuario ya registrado en Supabase.');
+      if (userError || !userData) {
+        setErrors({ general: 'No se pudo obtener información de usuario.' });
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
-      navigate('/'); // Redirige al inicio después de iniciar sesión
+      if (userData.rol === 'admin') {
+        navigate('/');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
-      console.error('Error en el inicio de sesión con Google:', error);
+      setErrors({ general: 'Hubo un problema con el inicio de sesión.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+
+      if (error) {
+        setErrors({ general: 'Error al iniciar sesión con Google.' });
+        setLoading(false);
+        return;
+      }
+
+      navigate('/');
+    } catch (error) {
+      setErrors({ general: 'Hubo un problema al iniciar sesión con Google.' });
       setLoading(false);
     }
   };

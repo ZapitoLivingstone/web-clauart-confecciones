@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../supabase'; // Asegúrate de que la ruta sea correcta
+import { supabase } from '../supabase';
 import '../styles/Header.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -15,86 +15,98 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    switch (location.pathname) {
-      case '/':
-        setHeaderText({
-          title: 'CLAUART Confecciones',
-          subtitle: 'Taller de confecciones de prendas de vestir',
-        });
-        break;
-      case '/Carrito':
-        setHeaderText({
-          title: 'Tu Carrito',
-          subtitle: 'Revisa y gestiona tus productos',
-        });
-        break;
-      case '/PanelAdmin':
-        setHeaderText({
-          title: 'Panel de Administración',
-          subtitle: 'Gestiona los productos y el inventario',
-        });
-        break;
-      default:
-        setHeaderText({
-          title: 'CLAUART Confecciones',
-          subtitle: 'Taller de confecciones de prendas de vestir',
-        });
-        break;
-    }
+    const updateHeaderText = () => {
+      switch (location.pathname) {
+        case '/':
+          setHeaderText({
+            title: 'CLAUART Confecciones',
+            subtitle: 'Taller de confecciones de prendas de vestir',
+          });
+          break;
+        case '/Carrito':
+          setHeaderText({
+            title: 'Tu Carrito',
+            subtitle: 'Revisa y gestiona tus productos',
+          });
+          break;
+        case '/PanelAdmin':
+          setHeaderText({
+            title: 'Panel de Administración',
+            subtitle: 'Gestiona los productos y el inventario',
+          });
+          break;
+        default:
+          setHeaderText({
+            title: 'CLAUART Confecciones',
+            subtitle: 'Taller de confecciones de prendas de vestir',
+          });
+          break;
+      }
+    };
+
+    updateHeaderText();
   }, [location.pathname]);
 
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const { data: user, error } = await supabase.auth.getUser();
-    
-        if (error) {
-          console.error('Error al obtener usuario:', error);
-          return;
-        }
-    
-        if (user) {
-          // Aquí puedes acceder a los datos del usuario y manejar roles o cualquier otra lógica.
-          console.log('Usuario autenticado:', user);
-          // Lógica adicional según sea necesario
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+        if (session?.user) {
+          const { data, error } = await supabase
+            .from('usuarios')
+            .select('rol')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) {
+            console.error('Error al obtener el rol:', error.message);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(data.rol === 'admin');
+          }
+          setIsLoggedIn(true);
+        } else {
+          setIsAdmin(false);
+          setIsLoggedIn(false);
         }
       } catch (err) {
-        console.error('Error al ejecutar fetchUserRole:', err);
+        console.error('Error al obtener la sesión o el rol del usuario:', err.message);
+        setIsAdmin(false);
+        setIsLoggedIn(false);
       }
     };
 
     fetchUserRole();
 
-    // Escuchar cambios en la sesión
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    // Corregido: Almacenar la función de cleanup retornada por onAuthStateChange
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setIsLoggedIn(true);
-        const { data, error } = await supabase
-          .from('users')
-          .select('rol')
-          .eq('id', session.user.id)
-          .single();
-        if (error) {
-          console.error('Error al obtener el rol:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data.rol === 'admin');
-        }
+        fetchUserRole();
       } else {
         setIsLoggedIn(false);
         setIsAdmin(false);
       }
     });
+
+    // Cleanup function
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut(); // Cerrar sesión con Supabase
+      await supabase.auth.signOut();
       setIsLoggedIn(false);
       setIsAdmin(false);
       navigate('/InicioSesion');
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      console.error('Error al cerrar sesión:', error.message);
     }
   };
 
@@ -107,7 +119,6 @@ const Header = () => {
         </div>
         <div className="header-links">
           <Link to="/" className="text-white me-3">Inicio</Link>
-
           {isLoggedIn ? (
             <>
               <Link to="/MiCuenta" className="text-white me-3">Mi cuenta</Link>
