@@ -78,7 +78,7 @@ const MisPedidos = () => {
             <table className="table table-bordered">
               <thead>
                 <tr>
-                  <th>Producto</th>  {/* Columna para el nombre del producto */}
+                  <th>Producto</th>
                   <th>Descripción</th>
                   <th>Color</th>
                   <th>Texto Personalizado</th>
