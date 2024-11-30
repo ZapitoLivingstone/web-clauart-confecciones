@@ -91,7 +91,7 @@ const MisPedidos = () => {
               <tbody>
                 {pedidos.map((pedido) => (
                   <tr key={pedido.id}>
-                    <td>{pedido.nombreProducto}</td>  {/* Mostrar nombre del producto */}
+                    <td>{pedido.nombreProducto}</td>
                     <td>{pedido.descripcion}</td>
                     <td>{pedido.color}</td>
                     <td>{pedido.customText}</td>
@@ -102,6 +102,7 @@ const MisPedidos = () => {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}

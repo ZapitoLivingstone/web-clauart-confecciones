@@ -102,22 +102,25 @@ const Pedidos = () => {
   const pedidosFiltrados = pedidos.filter((pedido) => {
     const nombreProducto = pedido.nombreProducto ? pedido.nombreProducto.toLowerCase() : '';
     const busquedaLower = busqueda.toLowerCase();
-    const estadoCoincide = !categoriaSeleccionada || pedido.estado === categoriaSeleccionada;
-    return nombreProducto.includes(busquedaLower) && estadoCoincide;
+  
+    const coincideBusqueda = nombreProducto.includes(busquedaLower);
+    const coincideEstado = !categoriaSeleccionada || pedido.estado === categoriaSeleccionada;
+  
+    return coincideBusqueda && coincideEstado;
   });
 
   return (
     <div>
       <HeaderAdmin pestañaActiva={pestañaActiva} setPestañaActiva={setPestañaActiva} />
       <div className="container mt-4">
-        <BarraBusqueda
-          placeholder="Buscar por producto"
-          busqueda={busqueda}
-          onBusquedaChange={setBusqueda}
-          opciones={opciones}
-          categoriaSeleccionada={categoriaSeleccionada}
-          onCategoriaChange={setCategoriaSeleccionada}
-        />
+          <BarraBusqueda
+            placeholder="Buscar por producto"
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
+            opciones={opciones.map((opcion) => ({ value: opcion.id, label: opcion.nombre }))}
+            categoriaSeleccionada={categoriaSeleccionada}
+            onCategoriaChange={setCategoriaSeleccionada}
+          />
         <div className="row">
           {pedidosFiltrados.map((pedido, index) => (
             <div key={pedido.id} className="col-md-4 mb-4">

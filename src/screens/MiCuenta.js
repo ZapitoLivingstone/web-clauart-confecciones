@@ -23,7 +23,7 @@ const MiCuenta = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const { data: user, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
           console.error('Error al obtener el usuario:', userError);
@@ -33,9 +33,9 @@ const MiCuenta = () => {
   
         if (user && user.id) {
           const { data, error } = await supabase
-            .from('usuarios')  // Asegúrate de que la tabla se llame 'usuarios' o ajusta el nombre
+            .from('usuarios') // Ajusta el nombre de la tabla si es necesario
             .select('*')
-            .eq('id', user.id)  // Aquí verificamos que el id no sea undefined
+            .eq('id', user.id)
             .single();
   
           if (error) {
@@ -72,12 +72,12 @@ const MiCuenta = () => {
 
   const handleSave = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { error } = await supabase
-          .from('usuarios') 
+          .from('usuarios') // Ajusta el nombre de la tabla si es necesario
           .update(userData)
-          .eq('id');
+          .eq('id', user.id);
 
         if (error) {
           throw error;
@@ -94,10 +94,9 @@ const MiCuenta = () => {
 
   const handleEmailChange = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Actualiza el correo electrónico en Supabase Auth
-        const { error } = await supabase.auth.update({ email: newEmail });
+        const { error } = await supabase.auth.updateUser({ email: newEmail });
         if (error) {
           throw error;
         }
@@ -119,9 +118,9 @@ const MiCuenta = () => {
         return;
       }
 
-      const { data: user } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { error } = await supabase.auth.update({ password: newPassword });
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) {
           throw error;
         }
