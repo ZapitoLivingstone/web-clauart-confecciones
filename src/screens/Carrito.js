@@ -37,58 +37,70 @@ const Carrito = () => {
   }, [cargarCarrito]);
 
   const confirmOrder = async () => {
-    const { user } = supabase.auth.session(); // Obteniendo el usuario actual
+    const { data: { session }, error } = await supabase.auth.getSession(); // Obteniendo la sesión actual
+    if (error) {
+      handleError(error, "Error al obtener la sesión");
+      return;
+    }
+    
+    const user = session?.user; // Accediendo al usuario desde la sesión
+    
     if (!user) {
       alert('Debes iniciar sesión para realizar un pedido');
       return;
     }
-
+  
     if (cartItems.length === 0) {
       alert('El carrito está vacío');
       return;
     }
-
+  
     setIsLoading(true);
     try {
       const pedidosPromises = cartItems.map(async (item) => {
         const pedidoData = {
-          ...item,
           usuarioId: user.id,
+          producto_id: item.producto_id, // FK a productos
+          color: item.color,
+          size: item.size,
+          cantidad: item.cantidad || 1, // Asignar un valor por defecto si cantidad es null o undefined
+          precio: item.precio,
           fechaPedido: new Date().toISOString(),
           estado: 'pendiente',
         };
-
+  
         const { data: pedidoDataResponse, error } = await supabase
           .from('pedidos')
           .insert([pedidoData]);
-
+  
         if (error) throw error;
-
+  
         // Eliminar del carrito
         const { error: deleteError } = await supabase
           .from('carrito')
           .delete()
           .match({ id: item.id });
-
+  
         if (deleteError) throw deleteError;
-        
+  
         return pedidoDataResponse;
       });
-
+  
       await Promise.all(pedidosPromises);
-      setCartItems([]);
+      setCartItems([]); // Vaciar el carrito
       setOrderConfirmed(true);
-      
+  
       setTimeout(() => {
         setOrderConfirmed(false);
       }, 3000);
-
+  
     } catch (error) {
       handleError(error, "Error al procesar el pedido");
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   const openEditModal = (item) => {
     setEditItem({ ...item });
@@ -138,6 +150,7 @@ const Carrito = () => {
 
       if (error) throw error;
 
+      // Actualiza el carrito en la UI
       setCartItems((prevItems) => prevItems.filter((item) => item.id !== editItem.id));
       setEditItem(null);
       setModalAction('');

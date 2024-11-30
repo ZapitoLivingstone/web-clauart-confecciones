@@ -32,8 +32,13 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
     };
 
     const cargarColoresYTallas = async () => {
-      const { data: colores, error: errorColores } = await supabase.from('colores').select('*');
-      const { data: tallas, error: errorTallas } = await supabase.from('tallas').select('*');
+      const { data: colores, error: errorColores } = await supabase
+        .from('colores')
+        .select('*');
+
+      const { data: tallas, error: errorTallas } = await supabase
+        .from('tallas')
+        .select('*');
 
       if (errorColores) {
         console.error('Error al cargar colores:', errorColores);
@@ -64,13 +69,27 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
   }, [valores.id, setValores]);
 
   const agregarColor = async () => {
+    if (!nuevoColor.trim()) return;
+
     const { data, error } = await supabase
       .from('colores')
-      .insert([{ valor: nuevoColor.trim() }]);
+      .insert([{ nombre: nuevoColor.trim() }])
+      .select();
 
     if (error) {
       console.error('Error al agregar el color:', error);
       setMensaje('Error al agregar el color.');
+      return;
+    }
+
+    const colorId = data[0].id;
+
+    const { error: errorRelacion } = await supabase
+      .from('productos_colores')
+      .insert([{ producto_id: valores.id, color_id: colorId }]);
+
+    if (errorRelacion) {
+      console.error('Error al asociar el color con el producto:', errorRelacion);
     } else {
       setColoresDisponibles([...coloresDisponibles, data[0]]);
       setMensaje(`Color "${nuevoColor}" agregado exitosamente.`);
@@ -79,34 +98,49 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
   };
 
   const agregarTalla = async () => {
+    if (!nuevaTalla.trim()) return; // Evitar agregar tallas vacías
+
     const { data, error } = await supabase
-      .from('tallas')
-      .insert([{ valor: nuevaTalla.trim() }]);
+        .from('tallas')
+        .insert([{ nombre: nuevaTalla.trim() }])
+        .select(); // Asegúrate de que la respuesta incluya la nueva talla
 
     if (error) {
-      console.error('Error al agregar la talla:', error);
-      setMensaje('Error al agregar la talla.');
-    } else {
-      setTallasDisponibles([...tallasDisponibles, data[0]]);
-      setMensaje(`Talla "${nuevaTalla}" agregada exitosamente.`);
-      setNuevaTalla('');
+        console.error('Error al agregar la talla:', error);
+        setMensaje('Error al agregar la talla.');
+        return;
     }
-  };
+
+    // Verifica si data tiene algún elemento antes de acceder a él
+    if (data && data.length > 0) {
+        setTallasDisponibles([...tallasDisponibles, data[0]]);
+        setMensaje(`Talla "${nuevaTalla}" agregada exitosamente.`);
+        setNuevaTalla('');
+    } else {
+        console.error('No se recibió datos válidos al agregar la talla.');
+        setMensaje('Error al agregar la talla. No se recibieron datos válidos.');
+    }
+};
 
   const eliminarColor = async (colorId, colorValor) => {
-    const { error } = await supabase.from('colores').delete().eq('id', colorId);
+    const { error: errorRelacion } = await supabase
+      .from('productos_colores')
+      .delete()
+      .eq('color_id', colorId)
+      .eq('producto_id', valores.id);
 
-    if (error) {
-      console.error('Error al eliminar el color:', error);
+    if (errorRelacion) {
+      console.error('Error al eliminar la relación color-producto:', errorRelacion);
       setMensaje('Error al eliminar el color.');
-    } else {
-      setColoresDisponibles(coloresDisponibles.filter((c) => c.id !== colorId));
-      setValores({
-        ...valores,
-        colores: (valores.colores || []).filter((c) => c !== colorValor),
-      });
-      setMensaje(`Color "${colorValor}" eliminado.`);
+      return;
     }
+
+    setColoresDisponibles(coloresDisponibles.filter((c) => c.id !== colorId));
+    setValores({
+      ...valores,
+      colores: (valores.colores || []).filter((c) => c !== colorValor),
+    });
+    setMensaje(`Color "${colorValor}" eliminado.`);
   };
 
   const eliminarTalla = async (tallaId, tallaValor) => {
@@ -154,12 +188,12 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                       <div key={color.id} className="d-inline-flex align-items-center me-2">
                         <Form.Check
                           type="checkbox"
-                          label={color.valor}
-                          checked={(valores.colores || []).includes(color.valor)}
+                          label={color.nombre}
+                          checked={(valores.colores || []).includes(color.nombre)}
                           onChange={() => {
-                            const actualizados = (valores.colores || []).includes(color.valor)
-                              ? valores.colores.filter((c) => c !== color.valor)
-                              : [...(valores.colores || []), color.valor];
+                            const actualizados = (valores.colores || []).includes(color.nombre)
+                              ? valores.colores.filter((c) => c !== color.nombre)
+                              : [...(valores.colores || []), color.nombre];
                             setValores({ ...valores, colores: actualizados });
                           }}
                           inline
@@ -167,7 +201,7 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                         <Button
                           variant="link"
                           size="sm"
-                          onClick={() => eliminarColor(color.id, color.valor)}
+                          onClick={() => eliminarColor(color.id, color.nombre)}
                         >
                           &times;
                         </Button>
@@ -193,12 +227,12 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                       <div key={talla.id} className="d-inline-flex align-items-center me-2">
                         <Form.Check
                           type="checkbox"
-                          label={talla.valor}
-                          checked={(valores.tallas || []).includes(talla.valor)}
+                          label={talla.nombre}
+                          checked={(valores.tallas || []).includes(talla.nombre)}
                           onChange={() => {
-                            const actualizados = (valores.tallas || []).includes(talla.valor)
-                              ? valores.tallas.filter((t) => t !== talla.valor)
-                              : [...(valores.tallas || []), talla.valor];
+                            const actualizados = (valores.tallas || []).includes(talla.nombre)
+                              ? valores.tallas.filter((t) => t !== talla.nombre)
+                              : [...(valores.tallas || []), talla.nombre];
                             setValores({ ...valores, tallas: actualizados });
                           }}
                           inline
@@ -206,7 +240,7 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                         <Button
                           variant="link"
                           size="sm"
-                          onClick={() => eliminarTalla(talla.id, talla.valor)}
+                          onClick={() => eliminarTalla(talla.id, talla.nombre)}
                         >
                           &times;
                         </Button>
@@ -215,11 +249,11 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
                   </div>
                 </>
               ) : null
-            ) : campo.nombre === 'categoria' ? (
+            ) : campo.nombre === 'categorias_id' ? (
               <Form.Control
                 as="select"
-                value={valores.categoria || ''}
-                onChange={(e) => setValores({ ...valores, categoria: e.target.value })}
+                value={valores.categorias_id || ''}
+                onChange={(e) => setValores({ ...valores, categorias_id: e.target.value })}
               >
                 <option value="" disabled>
                   Selecciona una categoría

@@ -1,199 +1,230 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';  // Asegúrate de configurar el cliente de Supabase en otro archivo
-import FormularioGenerico from './FormularioGenerico';
-import ListaGenerica from './ListaGenerica';
-import ModalGenerico from './ModalGenerico';
-import Validaciones from './Validaciones';
+import React, { useState, useEffect } from "react";
+import { supabase } from "../supabase";
+import FormularioGenerico from "./FormularioGenerico";
+import ListaGenerica from "./ListaGenerica";
+import ModalGenerico from "./ModalGenerico";
+import Validaciones from "./Validaciones";
 
 const GestionarProductos = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [coloresDisponibles, setColoresDisponibles] = useState([]);
   const [tallasDisponibles, setTallasDisponibles] = useState([]);
-  const [nuevoProducto, setNuevoProducto] = useState({ 
-    nombre: '', 
-    descripcion: '', 
-    precio: '', 
-    categoria: '', 
-    img_url: '', 
-    colores: [], 
-    tallas: [] 
+  const [nuevoProducto, setNuevoProducto] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: "",
+    categorias_id: "",
+    img_url: "",
+    colores: [],
+    tallas: [],
   });
   const [imagen, setImagen] = useState(null);
-  const [modalConfig, setModalConfig] = useState({ show: false, mode: '', producto: null });
+  const [modalConfig, setModalConfig] = useState({
+    show: false,
+    mode: "",
+    producto: null,
+  });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    cargarProductos();
-    cargarCategorias();
-    cargarColoresYTallas();
+    cargarDatosIniciales();
   }, []);
 
-  const cargarProductos = async () => {
-    const { data: productosData, error } = await supabase
-      .from('productos')
-      .select('*');
-    
-    if (error) {
-      console.error(error);
-    } else {
-      setProductos(productosData);
-    }
-  };
+  const cargarDatosIniciales = async () => {
+    try {
+      const [productosData, categoriasData, coloresData, tallasData] =
+        await Promise.all([
+          supabase.from("productos").select("*"),
+          supabase.from("categorias").select("*"),
+          supabase.from("colores").select("*"),
+          supabase.from("tallas").select("*"),
+        ]);
 
-  const cargarCategorias = async () => {
-    const { data: categoriasData, error } = await supabase
-      .from('categorias')
-      .select('*');
-    
-    if (error) {
-      console.error(error);
-    } else {
-      setCategorias(categoriasData);
-    }
-  };
+      if (
+        productosData.error ||
+        categoriasData.error ||
+        coloresData.error ||
+        tallasData.error
+      ) {
+        throw new Error("Error cargando datos iniciales");
+      }
 
-  const cargarColoresYTallas = async () => {
-    const { data: coloresData, error: coloresError } = await supabase
-      .from('colores')
-      .select('*');
-    const { data: tallasData, error: tallasError } = await supabase
-      .from('tallas')
-      .select('*');
-    
-    if (coloresError || tallasError) {
-      console.error(coloresError, tallasError);
-    } else {
-      setColoresDisponibles(coloresData);
-      setTallasDisponibles(tallasData);
+      setProductos(productosData.data);
+      setCategorias(categoriasData.data);
+      setColoresDisponibles(coloresData.data);
+      setTallasDisponibles(tallasData.data);
+    } catch (error) {
+      console.error("Error al cargar datos iniciales:", error);
     }
   };
 
   const validarFormulario = () => {
     const nuevosErrores = {
-      nombre: Validaciones.texto(nuevoProducto.nombre, 'Nombre'),
+      nombre: Validaciones.texto(nuevoProducto.nombre, "Nombre"),
       precio: Validaciones.precio(nuevoProducto.precio),
-      categoria: Validaciones.seleccion(nuevoProducto.categoria, 'Categoría'),
+      categoria: Validaciones.seleccion(
+        nuevoProducto.categorias_id,
+        "Categoría"
+      ),
     };
     setErrors(nuevosErrores);
     return !Object.values(nuevosErrores).some((error) => error);
+  };
+
+  const manejarImagen = async (imagen) => {
+    if (!imagen) return "";
+
+    try {
+      const fileExt = imagen.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `productos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("productos")
+        .upload(filePath, imagen);
+
+      if (uploadError) {
+        console.error("Error al subir imagen:", uploadError);
+        throw uploadError;
+      }
+
+      const {
+        data: { publicUrl },
+        error: urlError,
+      } = await supabase.storage.from("productos").getPublicUrl(filePath);
+
+      if (urlError) {
+        console.error("Error al obtener URL pública:", urlError);
+        throw urlError;
+      }
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error en el proceso de manejo de imagen:", error);
+      return "";
+    }
   };
 
   const agregarProducto = async (e) => {
     e.preventDefault();
     if (!validarFormulario()) return;
 
-    let imgUrl = '';
-    if (imagen) {
-      const { data, error } = await supabase
-        .storage
-        .from('productos')
-        .upload(`productos/${imagen.name}`, imagen);
-      
-      if (error) {
-        console.error(error);
-      } else {
-        const { publicURL } = supabase.storage.from('productos').getPublicUrl(data.path);
-        imgUrl = publicURL;
-      }
-    }
+    try {
+      const imgUrl = await manejarImagen(imagen);
 
-    const { error } = await supabase
-      .from('productos')
-      .insert([{ 
-        ...nuevoProducto, 
-        img_url: imgUrl 
-      }]);
-    
-    if (error) {
-      console.error(error);
-    } else {
-      setNuevoProducto({ nombre: '', descripcion: '', precio: '', categoria: '', img_url: '', colores: [], tallas: [] });
+      const { error: insertError } = await supabase.from("productos").insert([
+        {
+          ...nuevoProducto,
+          img_url: imgUrl,
+        },
+      ]);
+
+      if (insertError) throw insertError;
+
+      setNuevoProducto({
+        nombre: "",
+        descripcion: "",
+        precio: "",
+        categorias_id: "",
+        img_url: "",
+        colores: [],
+        tallas: [],
+      });
       setImagen(null);
-      cargarProductos();
+      setErrors({});
+      cargarDatosIniciales();
+    } catch (error) {
+      console.error("Error al agregar producto:", error);
     }
-  };
-
-  const handleEditarProducto = (producto) => {
-    setModalConfig({
-      show: true,
-      mode: 'edit',
-      producto: {
-        ...producto,
-        colores: producto.colores || [], 
-        tallas: producto.tallas || [],  
-      },
-    });
-  };
-
-  const handleEliminarProducto = (producto) => {
-    setModalConfig({ show: true, mode: 'delete', producto });
   };
 
   const actualizarProducto = async () => {
     if (!validarFormulario()) return;
 
-    let imgUrl = modalConfig.producto.img_url;
+    const productoActualizado = { ...modalConfig.producto };
     if (imagen) {
-      const { data, error } = await supabase
-        .storage
-        .from('productos')
-        .upload(`productos/${imagen.name}`, imagen);
-      
-      if (error) {
-        console.error(error);
-      } else {
-        const { publicURL } = supabase.storage.from('productos').getPublicUrl(data.path);
-        imgUrl = publicURL;
-      }
+      productoActualizado.img_url = await manejarImagen(imagen);
     }
 
     const { error } = await supabase
-      .from('productos')
-      .update({ ...modalConfig.producto, img_url: imgUrl })
-      .eq('id', modalConfig.producto.id);
-    
+      .from("productos")
+      .update({
+        ...productoActualizado,
+      })
+      .eq("id", productoActualizado.id);
+
     if (error) {
-      console.error(error);
-    } else {
-      setModalConfig({ show: false, mode: '', producto: null });
-      cargarProductos();
+      console.error("Error al actualizar producto:", error);
+      return;
     }
+
+    setModalConfig({ show: false, mode: "", producto: null });
+    cargarDatosIniciales();
   };
 
   const eliminarProducto = async () => {
     if (modalConfig.producto) {
       const { error } = await supabase
-        .from('productos')
+        .from("productos")
         .delete()
-        .eq('id', modalConfig.producto.id);
-      
+        .eq("id", modalConfig.producto.id);
+
       if (error) {
-        console.error(error);
+        console.error("Error al eliminar producto:", error);
       } else {
-        setModalConfig({ show: false, mode: '', producto: null });
-        cargarProductos();
+        setModalConfig({ show: false, mode: "", producto: null });
+        cargarDatosIniciales();
       }
     }
   };
 
   const camposProducto = [
-    { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'text', error: errors.nombre },
-    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea'},
-    { nombre: 'precio', etiqueta: 'Precio', tipo: 'number', error: errors.precio },
-    { nombre: 'categoria', etiqueta: 'Categoría', tipo: 'select', opciones: categorias, error: errors.categoria },
-    { nombre: 'img_url', etiqueta: 'Imagen', tipo: 'file' },
-    { nombre: 'colores', etiqueta: 'Colores', tipo: 'checkbox', opciones: coloresDisponibles },
-    { nombre: 'tallas', etiqueta: 'Tallas', tipo: 'checkbox', opciones: tallasDisponibles },
+    { nombre: "nombre", etiqueta: "Nombre", tipo: "text", error: errors.nombre },
+    { nombre: "descripcion", etiqueta: "Descripción", tipo: "textarea" },
+    { nombre: "precio", etiqueta: "Precio", tipo: "number", error: errors.precio },
+    {
+      nombre: "categorias_id",
+      etiqueta: "Categoría",
+      tipo: "select",
+      opciones: categorias.map((categoria) => ({
+        value: categoria.id,
+        label: categoria.nombre,
+      })),
+      error: errors.categoria,
+    },
+    { nombre: "img_url", etiqueta: "Imagen", tipo: "file" },
+    {
+      nombre: "colores",
+      etiqueta: "Colores",
+      tipo: "checkbox",
+      opciones: coloresDisponibles,
+    },
+    {
+      nombre: "tallas",
+      etiqueta: "Tallas",
+      tipo: "checkbox",
+      opciones: tallasDisponibles,
+    },
   ];
 
   const columnasProducto = [
-    { nombre: 'nombre', etiqueta: 'Nombre' },
-    { nombre: 'descripcion', etiqueta: 'Descripción' },
-    { nombre: 'precio', etiqueta: 'Precio' },
-    { nombre: 'colores', etiqueta: 'Colores' },
-    { nombre: 'tallas', etiqueta: 'Tallas' },
-    { nombre: 'img_url', etiqueta: 'Imagen' },
+    { nombre: "nombre", etiqueta: "Nombre" },
+    { nombre: "descripcion", etiqueta: "Descripción" },
+    { nombre: "precio", etiqueta: "Precio" },
+    {
+      nombre: "img_url",
+      etiqueta: "Imagen",
+      render: (producto) => (
+        <img
+          src={producto.img_url}
+          alt={producto.nombre}
+          style={{ width: "50px", height: "50px", objectFit: "cover" }}
+        />
+      ),
+    },
+    { nombre: "colores", etiqueta: "Colores" },
+    { nombre: "tallas", etiqueta: "Tallas" },
   ];
 
   return (
@@ -209,28 +240,45 @@ const GestionarProductos = () => {
       <ListaGenerica
         datos={productos}
         columnas={columnasProducto}
-        onEditar={handleEditarProducto}
-        onEliminar={handleEliminarProducto}
+        onEditar={(producto) =>
+          setModalConfig({
+            show: true,
+            mode: "edit",
+            producto: { ...producto },
+          })
+        }
+        onEliminar={(producto) =>
+          setModalConfig({ show: true, mode: "delete", producto })
+        }
       />
       <ModalGenerico
         show={modalConfig.show}
-        handleClose={() => setModalConfig({ show: false, mode: '', producto: null })}
-        title={modalConfig.mode === 'edit' ? 'Editar Producto' : 'Eliminar Producto'}
-        handleConfirm={modalConfig.mode === 'edit' ? actualizarProducto : eliminarProducto}
-        confirmText={modalConfig.mode === 'edit' ? 'Guardar Cambios' : 'Eliminar'}
+        handleClose={() => setModalConfig({ show: false, mode: "", producto: null })}
+        title={modalConfig.mode === "edit" ? "Editar Producto" : "Eliminar Producto"}
+        handleConfirm={
+          modalConfig.mode === "edit" ? actualizarProducto : eliminarProducto
+        }
+        confirmText={modalConfig.mode === "edit" ? "Guardar Cambios" : "Eliminar"}
       >
-        {modalConfig.mode === 'edit' ? (
-          <FormularioGenerico
-            titulo="Editar Producto"
-            campos={camposProducto}
-            valores={modalConfig.producto}
-            setValores={(valores) => setModalConfig({ ...modalConfig, producto: valores })}
-            onSubmit={actualizarProducto}
-            onImageChange={(e) => setImagen(e.target.files[0])}
-          />
-        ) : (
-          <p>¿Estás seguro de que deseas eliminar este producto?</p>
-        )}
+        {modalConfig.mode === "edit" && modalConfig.producto ? (
+      <FormularioGenerico
+        titulo="Editar Producto"
+        campos={camposProducto}
+        valores={modalConfig.producto}
+        setValores={(valores) =>
+          setModalConfig((prev) => ({
+            ...prev,
+            producto: valores,
+          }))
+        }
+        onSubmit={actualizarProducto}
+        onImageChange={(e) => setImagen(e.target.files[0])}
+      />
+    ) : modalConfig.mode === "edit" ? (
+      <p>Cargando...</p>
+    ) : (
+      <p>¿Estás seguro de que deseas eliminar este producto?</p>
+    )}
       </ModalGenerico>
     </div>
   );

@@ -9,25 +9,34 @@ const MisPedidos = () => {
 
   useEffect(() => {
     const fetchPedidos = async () => {
-      const user = supabase.auth.user();  // Obtiene el usuario autenticado
+      // Obtén el usuario autenticado
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error("Error al obtener el usuario:", error.message);
+        setLoading(false);
+        return;
+      }
 
       if (user) {
         try {
+          // Realiza la consulta con el id del usuario y agrega el join con la tabla productos
           const { data, error } = await supabase
             .from('pedidos')  // Reemplaza 'pedidos' por el nombre de tu tabla en Supabase
-            .select('*')
-            .eq('usuario_id', user.id);  // Asegúrate de que el campo en Supabase se llame 'usuario_id'
+            .select('*, productos(nombre)')  // Obtén el nombre del producto relacionado
+            .eq('usuarioId', user.id);  // Asegúrate de que el campo en Supabase se llame 'usuario_id'
 
           if (error) throw error;
 
           const pedidosData = data.map((pedido) => ({
             id: pedido.id,
+            nombreProducto: pedido.productos ? pedido.productos.nombre : 'Desconocido', // Obtén el nombre del producto
             descripcion: pedido.descripcion,
             color: pedido.color,
             customText: pedido.custom_text || 'N/A',
             size: pedido.size,
             precio: pedido.precio,
-            fechaPedido: formatFechaPedido(pedido.fecha_pedido),  // Ajusta el campo de la fecha si es necesario
+            fechaPedido: formatFechaPedido(pedido.fechaPedido),  // Ajusta el campo de la fecha si es necesario
             estado: pedido.estado,
           }));
 
@@ -37,6 +46,9 @@ const MisPedidos = () => {
         } finally {
           setLoading(false);
         }
+      } else {
+        console.error("No hay usuario autenticado");
+        setLoading(false);
       }
     };
 
@@ -66,6 +78,7 @@ const MisPedidos = () => {
             <table className="table table-bordered">
               <thead>
                 <tr>
+                  <th>Producto</th>  {/* Columna para el nombre del producto */}
                   <th>Descripción</th>
                   <th>Color</th>
                   <th>Texto Personalizado</th>
@@ -78,6 +91,7 @@ const MisPedidos = () => {
               <tbody>
                 {pedidos.map((pedido) => (
                   <tr key={pedido.id}>
+                    <td>{pedido.nombreProducto}</td>  {/* Mostrar nombre del producto */}
                     <td>{pedido.descripcion}</td>
                     <td>{pedido.color}</td>
                     <td>{pedido.customText}</td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase'; // Ensure Supabase is configured in this file
+import { supabase } from '../supabase'; // Asegúrate de que Supabase esté configurado correctamente en este archivo
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Header from '../components/Header';
 import ModalGenerico from '../components/ModalGenerico';
@@ -22,32 +22,42 @@ const MiCuenta = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const user = supabase.auth.user();
-      if (user) {
-        try {
+      try {
+        const { data: user, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error('Error al obtener el usuario:', userError);
+          setLoading(false);
+          return;
+        }
+  
+        if (user && user.id) {
           const { data, error } = await supabase
-            .from('users')
+            .from('usuarios')  // Asegúrate de que la tabla se llame 'usuarios' o ajusta el nombre
             .select('*')
-            .eq('id', user.id)
+            .eq('id', user.id)  // Aquí verificamos que el id no sea undefined
             .single();
-
+  
           if (error) {
             console.error('Error al obtener los datos del usuario:', error);
+            setLoading(false);
             return;
           }
-
-          setUserData(data); // This is now the data received from Supabase
-        } catch (error) {
-          console.error('Error al obtener los datos del usuario:', error);
-        } finally {
-          setLoading(false);
+  
+          setUserData(data); // Asigna los datos del usuario
+        } else {
+          console.error('No se pudo obtener el usuario o su id es inválido');
         }
+      } catch (error) {
+        console.error('Error al obtener los datos del usuario:', error);
+      } finally {
+        setLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, []);
-
+  
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
@@ -62,12 +72,12 @@ const MiCuenta = () => {
 
   const handleSave = async () => {
     try {
-      const user = supabase.auth.user();
+      const { data: user } = await supabase.auth.getUser();
       if (user) {
         const { error } = await supabase
-          .from('users')
+          .from('usuarios') 
           .update(userData)
-          .eq('id', user.id);
+          .eq('id');
 
         if (error) {
           throw error;
@@ -84,9 +94,9 @@ const MiCuenta = () => {
 
   const handleEmailChange = async () => {
     try {
-      const user = supabase.auth.user();
+      const { data: user } = await supabase.auth.getUser();
       if (user) {
-        // Update email in Supabase Auth
+        // Actualiza el correo electrónico en Supabase Auth
         const { error } = await supabase.auth.update({ email: newEmail });
         if (error) {
           throw error;
@@ -109,7 +119,7 @@ const MiCuenta = () => {
         return;
       }
 
-      const user = supabase.auth.user();
+      const { data: user } = await supabase.auth.getUser();
       if (user) {
         const { error } = await supabase.auth.update({ password: newPassword });
         if (error) {

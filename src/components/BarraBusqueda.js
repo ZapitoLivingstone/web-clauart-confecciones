@@ -1,6 +1,6 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../styles/BarraBusqueda.css'; 
+import '../styles/BarraBusqueda.css';
 
 const BarraBusqueda = ({ placeholder, busqueda, onBusquedaChange, opciones, categoriaSeleccionada, onCategoriaChange }) => {
   return (
@@ -18,17 +18,18 @@ const BarraBusqueda = ({ placeholder, busqueda, onBusquedaChange, opciones, cate
       {opciones && (
         <div className="col-md-6">
           <select
-            className="form-select category-dropdown"
-            value={categoriaSeleccionada}
-            onChange={(e) => onCategoriaChange(e.target.value)}
-          >
-            <option value="">Todas las Opciones</option>
-            {opciones.map((opcion) => (
-              <option key={opcion.id} value={opcion.id}>
-                {opcion.nombre}
-              </option>
-            ))}
-          </select>
+          className="form-select category-dropdown"
+          value={categoriaSeleccionada}
+          onChange={(e) => onCategoriaChange(e.target.value)}
+        >
+          <option value="">Todas las Opciones</option>
+          {opciones && opciones.length > 0 && opciones.map((opcion) => (
+            <option key={opcion.value} value={opcion.value}>
+              {opcion.label}
+            </option>
+          ))}
+        </select>
+
         </div>
       )}
     </div>

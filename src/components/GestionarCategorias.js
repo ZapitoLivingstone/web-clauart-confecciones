@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FormularioGenerico from './FormularioGenerico';
 import ListaGenerica from './ListaGenerica';
 import ModalGenerico from './ModalGenerico';
-import { supabase } from '../supabase'; // Asegúrate de configurar tu cliente Supabase en un archivo separado
+import { supabase } from '../supabase';
 import Validaciones from './Validaciones';
 
 const GestionarCategorias = () => {
@@ -14,10 +14,9 @@ const GestionarCategorias = () => {
   const [selectedCategoria, setSelectedCategoria] = useState(null);
   const [modalType, setModalType] = useState(''); // 'edit' or 'delete'
 
-  // Cargar categorías al iniciar el componente
   useEffect(() => {
     const cargarCategorias = async () => {
-      const { data, error } = await supabase.from('categorias').select();
+      const { data, error } = await supabase.from('categorias').select('*');
       if (error) {
         console.error('Error al cargar categorías:', error);
       } else {
@@ -40,59 +39,57 @@ const GestionarCategorias = () => {
     e.preventDefault();
     if (!validarFormulario()) return;
 
-    if (isEditing) {
-      // Actualizar categoría
-      const { error } = await supabase
-        .from('categorias')
-        .update({ nombre: valores.nombre, descripcion: valores.descripcion })
-        .eq('id', valores.id);
+    const nuevaCategoria = { nombre: valores.nombre.trim(), descripcion: valores.descripcion.trim() };
 
-      if (error) {
-        console.error('Error al actualizar categoría:', error);
-      } else {
-        setCategorias((prevCategorias) =>
-          prevCategorias.map((cat) => (cat.id === valores.id ? { ...cat, ...valores } : cat))
-        );
-      }
-    } else {
-      // Agregar nueva categoría
-      const { data, error } = await supabase
-        .from('categorias')
-        .insert([{ nombre: valores.nombre, descripcion: valores.descripcion }]);
+    const { error } = await supabase.from('categorias').insert([nuevaCategoria]);
 
-      if (error) {
-        console.error('Error al agregar categoría:', error);
-      } else {
-        setCategorias([...categorias, ...data]);
-      }
+    if (error) {
+      console.error('Error al agregar categoría:', error);
+      return;
     }
 
+    setCategorias([...categorias, nuevaCategoria]);
+    setValores({ nombre: '', descripcion: '' });
+    setErrors({});
+    setShowModal(false);
+  };
+
+  const handleEditar = (categoria) => {
+    setValores({ nombre: categoria.nombre, descripcion: categoria.descripcion });
+    setIsEditing(true);
+    setModalType('edit');
+    setSelectedCategoria(categoria);
+    setShowModal(true);
+  };
+
+  const handleActualizar = async () => {
+    const categoriaEditada = { nombre: valores.nombre.trim(), descripcion: valores.descripcion.trim() };
+
+    const { error } = await supabase
+      .from('categorias')
+      .update(categoriaEditada)
+      .eq('id', selectedCategoria.id);
+
+    if (error) {
+      console.error('Error al actualizar categoría:', error);
+      return;
+    }
+
+    setCategorias(categorias.map(cat => (cat.id === selectedCategoria.id ? { ...cat, ...categoriaEditada } : cat)));
     setValores({ nombre: '', descripcion: '' });
     setErrors({});
     setIsEditing(false);
     setShowModal(false);
   };
 
-  const handleEditar = (categoria) => {
-    setValores(categoria);
-    setIsEditing(true);
-    setModalType('edit');
-    setShowModal(true);
-  };
-
   const handleEliminar = async () => {
-    if (selectedCategoria) {
-      const { error } = await supabase
-        .from('categorias')
-        .delete()
-        .eq('id', selectedCategoria.id);
-
-      if (error) {
-        console.error('Error al eliminar categoría:', error);
-      } else {
-        setCategorias(categorias.filter((cat) => cat.id !== selectedCategoria.id));
-      }
+    const { error } = await supabase.from('categorias').delete().eq('id', selectedCategoria.id);
+    if (error) {
+      console.error('Error al eliminar categoría:', error);
+      return;
     }
+
+    setCategorias(categorias.filter(cat => cat.id !== selectedCategoria.id));
     setShowModal(false);
     setSelectedCategoria(null);
   };
@@ -122,26 +119,26 @@ const GestionarCategorias = () => {
         setValores={setValores}
         onSubmit={(e) => {
           e.preventDefault();
-          setModalType('edit');
-          setShowModal(true);
+          if (isEditing) {
+            handleActualizar();
+          } else {
+            handleAgregar(e);
+          }
         }}
       />
 
       <ListaGenerica
         datos={categorias}
-        columnas={[
-          { nombre: 'nombre', etiqueta: 'Nombre' },
-          { nombre: 'descripcion', etiqueta: 'Descripción' },
-        ]}
-        onEditar={handleEditar}
-        onEliminar={handleOpenDeleteModal}
+        columnas={[{ nombre: 'nombre', etiqueta: 'Nombre' }, { nombre: 'descripcion', etiqueta: 'Descripción' }]}
+        onEditar={(categoria) => handleEditar(categoria)}
+        onEliminar={(categoria) => handleOpenDeleteModal(categoria)}
       />
 
       <ModalGenerico
         show={showModal}
         handleClose={handleCloseModal}
         title={modalType === 'delete' ? 'Confirmar Eliminación' : 'Editar Categoría'}
-        handleConfirm={modalType === 'delete' ? handleEliminar : handleAgregar}
+        handleConfirm={modalType === 'delete' ? handleEliminar : handleActualizar}
         confirmText={modalType === 'delete' ? 'Eliminar' : 'Guardar'}
       >
         {modalType === 'delete' ? (
@@ -155,7 +152,7 @@ const GestionarCategorias = () => {
             ]}
             valores={valores}
             setValores={setValores}
-            onSubmit={handleAgregar}
+            onSubmit={handleActualizar}
           />
         )}
       </ModalGenerico>

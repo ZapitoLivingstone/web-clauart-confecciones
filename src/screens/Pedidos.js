@@ -45,7 +45,7 @@ const Pedidos = () => {
 
         // Obtener usuarios desde Supabase
         const { data: usuariosData, error: usuariosError } = await supabase
-          .from('users')
+          .from('usuarios')
           .select('*');
         if (usuariosError) throw usuariosError;
 

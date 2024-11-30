@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '../supabase'; // Asegúrate de importar la configuración de Supabase
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabase'; 
 import Header from '../components/Header';
 
 const DetalleProducto = () => {
@@ -12,6 +12,7 @@ const DetalleProducto = () => {
   const [size, setSize] = useState('');
   const [customText, setCustomText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducto = async () => {
@@ -26,7 +27,7 @@ const DetalleProducto = () => {
           .from('productos')
           .select('*')
           .eq('id', productoId)
-          .single(); // Usamos single() ya que se espera solo un producto
+          .single(); 
 
         if (error) {
           setError("Error al obtener el producto: " + error.message);
@@ -73,7 +74,7 @@ const DetalleProducto = () => {
       color,
       size,
       custom_text: customText,
-      fecha_agregado: new Date(), // Usamos la fecha actual
+      fecha_agregado: new Date(), 
       img_url: producto.img_url
     };
 
@@ -89,13 +90,15 @@ const DetalleProducto = () => {
         setColor('');
         setSize('');
         setCustomText('');
+        navigate('/carrito');  // Redirige al carrito
       }
     } catch (error) {
       handleError(error, "Error al agregar al carrito");
     } finally {
       setIsLoading(false);
     }
-  };
+};
+
 
   if (loading) return <div>Cargando producto...</div>;
   if (error) return <div>{error}</div>;

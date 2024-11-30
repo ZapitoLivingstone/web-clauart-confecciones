@@ -35,7 +35,10 @@ const ListaGenerica = ({ datos, columnas, onEditar, onEliminar }) => {
               {columnas.map((col) => (
                 <td key={col.nombre}>
                   {col.nombre === 'img_url' && item[col.nombre] ? (
-                    <img src={item[col.nombre]} alt="Producto" style={{ width: '50px', height: '50px' }} />
+                    <>
+                      <img src={item[col.nombre]} alt="Producto" style={{ width: '50px', height: '50px' }} />
+                      <p>{item[col.nombre]}</p> {/* Esto te mostrará la URL de la imagen */}
+                    </>
                   ) : Array.isArray(item[col.nombre]) ? (
                     item[col.nombre].join(', ')
                   ) : (
