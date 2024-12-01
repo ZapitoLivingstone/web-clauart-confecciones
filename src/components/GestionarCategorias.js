@@ -83,16 +83,23 @@ const GestionarCategorias = () => {
   };
 
   const handleEliminar = async () => {
+    console.log('Eliminando categoría con ID:', selectedCategoria?.id);  // Agregar un log para verificar
+    if (!selectedCategoria?.id) {
+      console.error('ID de categoría no disponible');
+      return;
+    }
+  
     const { error } = await supabase.from('categorias').delete().eq('id', selectedCategoria.id);
     if (error) {
       console.error('Error al eliminar categoría:', error);
       return;
     }
-
+  
     setCategorias(categorias.filter(cat => cat.id !== selectedCategoria.id));
     setShowModal(false);
     setSelectedCategoria(null);
   };
+  
 
   const handleOpenDeleteModal = (categoria) => {
     setSelectedCategoria(categoria);

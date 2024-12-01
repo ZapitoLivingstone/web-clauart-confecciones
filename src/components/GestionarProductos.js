@@ -252,34 +252,38 @@ const GestionarProductos = () => {
         }
       />
       <ModalGenerico
-        show={modalConfig.show}
-        handleClose={() => setModalConfig({ show: false, mode: "", producto: null })}
-        title={modalConfig.mode === "edit" ? "Editar Producto" : "Eliminar Producto"}
-        handleConfirm={
-          modalConfig.mode === "edit" ? actualizarProducto : eliminarProducto
-        }
-        confirmText={modalConfig.mode === "edit" ? "Guardar Cambios" : "Eliminar"}
-      >
-        {modalConfig.mode === "edit" && modalConfig.producto ? (
-      <FormularioGenerico
-        titulo="Editar Producto"
-        campos={camposProducto}
-        valores={modalConfig.producto}
-        setValores={(valores) =>
-          setModalConfig((prev) => ({
-            ...prev,
-            producto: valores,
-          }))
-        }
-        onSubmit={actualizarProducto}
-        onImageChange={(e) => setImagen(e.target.files[0])}
-      />
-    ) : modalConfig.mode === "edit" ? (
-      <p>Cargando...</p>
-    ) : (
-      <p>¿Estás seguro de que deseas eliminar este producto?</p>
-    )}
-      </ModalGenerico>
+  show={modalConfig.show}
+  handleClose={() => setModalConfig({ show: false, mode: "", producto: null })}
+  title={modalConfig.mode === "edit" ? "Editar Producto" : "Eliminar Producto"}
+  handleConfirm={
+    modalConfig.mode === "edit" ? actualizarProducto : eliminarProducto
+  }
+  confirmText={modalConfig.mode === "edit" ? "Guardar Cambios" : "Eliminar"}
+>
+  {modalConfig.mode === "edit" && modalConfig.producto ? (
+    <FormularioGenerico
+      titulo="Editar Producto"
+      campos={camposProducto}
+      valores={modalConfig.producto}
+      setValores={(valores) =>
+        setModalConfig((prev) => ({
+          ...prev,
+          producto: { ...prev.producto, ...valores },
+        }))
+      }
+      onSubmit={(e) => {
+        e.preventDefault();
+        actualizarProducto();
+      }}
+      onImageChange={(e) => setImagen(e.target.files[0])}
+    />
+  ) : modalConfig.mode === "delete" ? (
+    <p>¿Estás seguro de que deseas eliminar este producto?</p>
+  ) : (
+    <p>Cargando...</p>
+  )}
+</ModalGenerico>
+
     </div>
   );
 };

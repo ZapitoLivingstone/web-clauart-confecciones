@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import CardProductos from '../components/CardProductos';
 import BarraBusqueda from '../components/BarraBusqueda';
 import { supabase } from '../supabase';
+import Footer from '../components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Inicio = () => {
@@ -62,7 +63,9 @@ const Inicio = () => {
           onCategoriaChange={setCategoriaSeleccionada}
         />
         <CardProductos productos={productosFiltrados} />
+        
       </div>
+      <Footer />
     </>
   );
 };
