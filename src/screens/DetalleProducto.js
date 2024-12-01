@@ -123,7 +123,7 @@ const DetalleProducto = () => {
             <div className="col-md-6 product-info">
               <h2 className="product-title">{producto.nombre}</h2>
               <p className="product-description">{producto.descripcion}</p>
-              <p className="product-price">${producto.precio.toFixed(2)}</p>
+              <p className="product-price">${producto.precio}</p>
               
               <div className="mb-3">
                 <strong>Colores Disponibles:</strong> 

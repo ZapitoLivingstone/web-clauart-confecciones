@@ -3,6 +3,8 @@ import { supabase } from '../supabase';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Header from '../components/Header';
 import ModalGenerico from '../components/ModalGenerico';
+import '../styles/MiCuenta.css';
+import Footer from '../components/Footer';
 
 const MiCuenta = () => {
   const [userData, setUserData] = useState({
@@ -75,7 +77,7 @@ const MiCuenta = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { error } = await supabase
-          .from('usuarios') // Ajusta el nombre de la tabla si es necesario
+          .from('usuarios')
           .update(userData)
           .eq('id', user.id);
 
@@ -143,7 +145,7 @@ const MiCuenta = () => {
       <Header />
       <div className="container my-4">
         <h2>Mi Cuenta</h2>
-        <div className="card p-4">
+        <div className="mi-cuenta-card">
           <div className="mb-3">
             <label htmlFor="nombre" className="form-label">Nombre</label>
             <input
@@ -263,6 +265,7 @@ const MiCuenta = () => {
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
       </ModalGenerico>
+      <Footer />
     </>
   );
 };
