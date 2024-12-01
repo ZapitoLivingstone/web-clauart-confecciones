@@ -1,88 +1,96 @@
 .table-container {
-    overflow-x: auto;
-    margin-bottom: 20px;
+  margin-bottom: 20px;
+  overflow: hidden; 
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse; 
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  text-align: left; 
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table img {
+  max-width: 40px;
+  max-height: 40px;
+  object-fit: cover; 
+}
+
+.table-actions {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.table-actions button {
+  padding: 4px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.table-actions .btn-delete {
+  background-color: #ff4d4d; 
+  color: white;
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
+  .table th,
+  .table td {
+      padding: 12px;
   }
   
-  .table {
-    width: 100%;
-    max-width: 100%;
-    table-layout: fixed;
+  .table img {
+      max-width: 60px;
+      max-height: 60px;
+  }
+  
+  .table-actions {
+      justify-content: flex-end; 
+  }
+  
+  .table-actions button {
+      padding: 6px 12px;
+      font-size: 14px;
+  }
+}
+
+@media (max-width: 767px) {
+  .table-actions {
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+  }
+  
+  .table-actions button {
+      width: 100%;
+      padding: 6px 8px;
+  }
+  
+  .table-actions .btn-delete {
+      order: 1; 
+      flex: 1 1 auto;
   }
   
   .table th,
   .table td {
-    white-space: nowrap;
-    overflow: auto;
-    text-overflow: initial ;
-    padding: 8px;
+      font-size: 14px;
   }
   
   .table img {
-    max-width: 40px;
-    max-height: 40px;
+      max-width: 40px;
+      max-height: 40px;
   }
-  
-  .table-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
-  }
-  
-  .table-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  
-  /* Especificar prioridad en el botón de eliminar */
-  .table-actions .btn-delete {
-    background-color: #ff4d4d; /* Cambia el color si es necesario */
-    color: #fff;
-    font-weight: bold;
-  }
-  
-  /* Ajuste para pantallas medianas y grandes */
-  @media (min-width: 768px) {
-    .table th,
-    .table td {
-      padding: 12px;
-    }
-    
-    .table img {
-      max-width: 60px;
-      max-height: 60px;
-    }
-    
-    .table-actions {
-      justify-content: flex-end;
-    }
-    
-    .table-actions button {
-      padding: 6px 12px;
-      font-size: 14px;
-    }
-  }
-  
-  /* Estilos para pantallas pequeñas */
-  @media (max-width: 767px) {
-    .table-actions {
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
-    }
-    
-    .table-actions button {
-      width: 100%;
-      padding: 6px 8px;
-    }
-    
-    /* Mantener el botón de eliminar visible y al frente en dispositivos móviles */
-    .table-actions .btn-delete {
-      order: 1; /* Mantener "Eliminar" en la parte superior si está apilado */
-      flex: 1 1 auto;
-    }
-  }
-  
+}

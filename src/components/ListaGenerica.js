@@ -20,7 +20,7 @@ const ListaGenerica = ({ datos, columnas, onEditar, onEliminar }) => {
         busqueda={busqueda}
         onBusquedaChange={setBusqueda}
       />
-      <Table striped bordered hover>
+      <Table striped bordered hover className="productos-table">
         <thead>
           <tr>
             {columnas.map((col) => (
@@ -35,10 +35,11 @@ const ListaGenerica = ({ datos, columnas, onEditar, onEliminar }) => {
               {columnas.map((col) => (
                 <td key={col.nombre}>
                   {col.nombre === 'img_url' && item[col.nombre] ? (
-                    <>
-                      <img src={item[col.nombre]} alt="Producto" style={{ width: '50px', height: '50px' }} />
-                      <p>{item[col.nombre]}</p> {/* Esto te mostrará la URL de la imagen */}
-                    </>
+                    <img
+                      src={item[col.nombre]}
+                      alt="Producto"
+                      className="producto-img" // Clases CSS para ajustar el estilo
+                    />
                   ) : Array.isArray(item[col.nombre]) ? (
                     item[col.nombre].join(', ')
                   ) : (
