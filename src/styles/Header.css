@@ -1,8 +1,9 @@
 .header {
-    padding: 20px;
-    background-color: #007bff;
+    background-color: #ffffff; 
+    color: #000000; 
+    padding: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
 
 .header-container {
     display: flex;
@@ -11,60 +12,69 @@
 }
 
 .header-title h1 {
-    font-size: 2em; /* Tamaño del título */
-    margin-bottom: 0.5em; /* Espacio inferior del título */
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 0.3em;
 }
 
 .header-title p {
-    font-size: 1em; /* Tamaño del subtítulo */
-    margin-bottom: 0; /* Sin margen inferior */
+    font-size: 1em;
+    color: #6c757d;
+    margin-bottom: 0;
 }
 
-/* Estilos para los enlaces del encabezado */
-.header-links {
-
-    align-items: center;
-}
-
-/* Estilo para los enlaces */
 .header-links a {
-    color: black; /* Color de los enlaces */
-    margin-right: 15px; /* Espacio entre los enlaces */
-    text-decoration: none; /* Sin subrayado */
-    font-size: 1em; /* Tamaño de fuente uniforme para todos los enlaces */
+    color: #000;
+    text-decoration: none;
+    margin-right: 15px;
+    font-size: 1em;
+    transition: color 0.3s ease;
 }
 
-/* Estilo para el botón de cierre de sesión */
-.header-links .btn {
-    margin-left: 10px; /* Espacio a la izquierda del botón */
+.header-links a:hover {
+    color: #6c757d;
 }
 
-/* Estilo para el dropdown */
-.header-links .dropdown-menu {
-    min-width: 200px; /* Ancho mínimo del menú desplegable */
+.dropdown-menu {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos responsivos */
+.dropdown-item {
+    color: #000;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #fff5f5;
+}
+
+.mobile-menu-overlay {
+    z-index: 1050;
+    background-color: #ffffff;
+    overflow-y: auto;
+    padding-top: 60px;
+}
+
+.mobile-menu-overlay a, 
+.mobile-menu-overlay button {
+    font-size: 1.2em;
+    padding: 15px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
 @media (max-width: 768px) {
-    .header-container {
-        flex-direction: column; /* Apila los elementos en columna en pantallas pequeñas */
-        align-items: flex-start; /* Alinea los elementos al inicio */
-    }
-
     .header-title h1 {
-        font-size: 1.5em; /* Tamaño del título en pantallas pequeñas */
+        font-size: 2em;
     }
 
     .header-title p {
-        font-size: 0.9em; /* Tamaño del subtítulo en pantallas pequeñas */
-    }
-
-    .header-links {
-        flex-wrap: wrap; /* Permite que los enlaces se envuelvan en varias líneas */
-        margin-top: 10px; /* Espacio superior para separar de los títulos */
-    }
-
-    .header-links a {
-        margin-right: 10px; /* Espacio entre los enlaces en pantallas pequeñas */
+        font-size: 0.9em;
     }
 }

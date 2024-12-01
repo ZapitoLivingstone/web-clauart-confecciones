@@ -6,6 +6,7 @@ import { supabase } from '../supabase';
 import Footer from '../components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+
 const Inicio = () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -49,7 +50,7 @@ const Inicio = () => {
   return (
     <>
       <Header />
-      <div className="container my-5">
+      <div className="container inicio-container">
         <h2 className="text-center">Nuestros Productos</h2>
         <BarraBusqueda
           placeholder="Buscar productos..."
@@ -62,7 +63,10 @@ const Inicio = () => {
           categoriaSeleccionada={categoriaSeleccionada}
           onCategoriaChange={setCategoriaSeleccionada}
         />
+
+        <div className="card-product-container">
         <CardProductos productos={productosFiltrados} />
+        </div>
         
       </div>
       <Footer />

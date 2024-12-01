@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase'; 
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+import '../styles/DetalleProducto.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const DetalleProducto = () => {
   const { productoId } = useParams();
@@ -90,37 +93,49 @@ const DetalleProducto = () => {
         setColor('');
         setSize('');
         setCustomText('');
-        navigate('/carrito');  // Redirige al carrito
+        navigate('/carrito');
       }
     } catch (error) {
       handleError(error, "Error al agregar al carrito");
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
-
-  if (loading) return <div>Cargando producto...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return <div className="text-center my-5">Cargando producto...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <>
       <Header />
-      <div className="container my-5">
-        <h1>Detalles del Producto</h1>
+      <div className="container product-details-container">
         {producto ? (
           <div className="row">
             <div className="col-md-6">
-              <img src={producto.img_url} className="img-fluid" alt={producto.nombre} />
+              <div className="product-image-container">
+                <img 
+                  src={producto.img_url} 
+                  className="product-image" 
+                  alt={producto.nombre} 
+                />
+              </div>
             </div>
-            <div className="col-md-6">
-              <h2>{producto.nombre}</h2>
-              <p>{producto.descripcion}</p>
-              <p>Precio: ${producto.precio}</p>
-              <p>Colores Disponibles: {producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
-              <p>Tallas Disponibles: {producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
-              <div className="mt-4">
-                <h3>Personaliza tu Producto</h3>
+            <div className="col-md-6 product-info">
+              <h2 className="product-title">{producto.nombre}</h2>
+              <p className="product-description">{producto.descripcion}</p>
+              <p className="product-price">${producto.precio.toFixed(2)}</p>
+              
+              <div className="mb-3">
+                <strong>Colores Disponibles:</strong> 
+                <p>{producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
+              </div>
+              <div className="mb-3">
+                <strong>Tallas Disponibles:</strong> 
+                <p>{producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
+              </div>
+
+              <div className="customization-section">
+                <h3 className="mb-4">Personaliza tu Producto</h3>
                 <form id="customization-form">
                   <div className="form-group mb-3">
                     <label htmlFor="color">Color</label>
@@ -163,7 +178,7 @@ const DetalleProducto = () => {
                   </div>
                   <button 
                     type="button" 
-                    className="btn btn-primary mt-3" 
+                    className="btn btn-primary w-100" 
                     onClick={agregarAlCarrito}
                     disabled={isLoading}
                   >
@@ -177,9 +192,10 @@ const DetalleProducto = () => {
             </div>
           </div>
         ) : (
-          <p>No se encontró información del producto.</p>
+          <p className="text-center">No se encontró información del producto.</p>
         )}
       </div>
+      <Footer />
     </>
   );
 };

@@ -10,8 +10,7 @@ import Inventario from './screens/Inventario';
 import Pedidos from './screens/Pedidos';
 import MiCuenta from './screens/MiCuenta';
 import MisPedidos from './screens/MisPedidos';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
+
 function App() {
   return (
     <Router>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase'; // Asegúrate de que Supabase esté configurado correctamente en este archivo
+import { supabase } from '../supabase';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Header from '../components/Header';
 import ModalGenerico from '../components/ModalGenerico';
