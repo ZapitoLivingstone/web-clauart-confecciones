@@ -47,7 +47,7 @@ const GestionarCategorias = () => {
       return;
     }
   
-    setCategorias((prev) => [...prev, ...data]); // Agregar la nueva categoría al estado local
+    setCategorias((prev) => [...prev, ...data]); 
     setValores({ nombre: "", descripcion: "" });
     setErrors({});
     setShowModal(false);

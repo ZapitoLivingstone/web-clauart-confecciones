@@ -106,20 +106,20 @@ const GestionarProductos = () => {
 
   const agregarProducto = async (e) => {
     e.preventDefault();
-    if (!validarFormulario()) return;
-
+    if (!validarFormulario(nuevoProducto)) return;
+  
     try {
       const imgUrl = await manejarImagen(imagen);
-
+  
       const { error: insertError } = await supabase.from("productos").insert([
         {
           ...nuevoProducto,
           img_url: imgUrl,
         },
       ]);
-
+  
       if (insertError) throw insertError;
-
+  
       setNuevoProducto({
         nombre: "",
         descripcion: "",
@@ -136,6 +136,7 @@ const GestionarProductos = () => {
       console.error("Error al agregar producto:", error);
     }
   };
+  
 
   const actualizarProducto = async () => {
     if (!validarFormulario(modalConfig.producto)) return;

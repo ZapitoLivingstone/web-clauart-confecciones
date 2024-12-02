@@ -31,7 +31,7 @@ const Footer = () => {
             <FontAwesomeIcon icon={faTiktok} size="lg" />
           </a>
           <a
-            href="https://wa.me/"
+            href="https://w.app/Confeccion"
             target="_blank"
             rel="noopener noreferrer"
             className="text-light footer-icon"

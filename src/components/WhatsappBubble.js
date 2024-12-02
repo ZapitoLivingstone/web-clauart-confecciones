@@ -2,7 +2,7 @@ import React from 'react';
 import '../styles/WhatsappBubble.css';
 
 const WhatsappBubble = () => {
-  const whatsappNumber = "https://wa.me/56912345678"; // Reemplaza con el número de la modista
+  const whatsappNumber = "https://w.app/Confeccion"; 
 
   return (
     <a

@@ -70,40 +70,43 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
 
   const agregarColor = async () => {
     if (!nuevoColor.trim()) return;
-
-    const { data, error } = await supabase
-      .from('colores')
-      .insert([{ nombre: nuevoColor.trim() }])
-      .select();
-
-    if (error) {
-      console.error('Error al agregar el color:', error);
-      setMensaje('Error al agregar el color.');
-      return;
-    }
-
-    const colorId = data[0].id;
-
-    const { error: errorRelacion } = await supabase
-      .from('productos_colores')
-      .insert([{ producto_id: valores.id, color_id: colorId }]);
-
-    if (errorRelacion) {
-      console.error('Error al asociar el color con el producto:', errorRelacion);
-    } else {
-      setColoresDisponibles([...coloresDisponibles, data[0]]);
-      setMensaje(`Color "${nuevoColor}" agregado exitosamente.`);
-      setNuevoColor('');
+  
+    try {
+      // Insertar el nuevo color en la tabla "colores"
+      const { data, error } = await supabase
+        .from('colores')
+        .insert([{ nombre: nuevoColor.trim() }])
+        .select();
+  
+      if (error) {
+        console.error('Error al agregar el color:', error);
+        setMensaje('Error al agregar el color.');
+        return;
+      }
+  
+      // Si la inserción fue exitosa, actualizar el estado local
+      if (data && data.length > 0) {
+        setColoresDisponibles([...coloresDisponibles, data[0]]);
+        setMensaje(`Color "${nuevoColor}" agregado exitosamente.`);
+        setNuevoColor(''); // Limpiar el campo de entrada
+      } else {
+        console.error('No se recibió datos válidos al agregar el color.');
+        setMensaje('Error al agregar el color. No se recibieron datos válidos.');
+      }
+    } catch (error) {
+      console.error('Error inesperado al agregar el color:', error);
+      setMensaje('Ocurrió un error al intentar agregar el color.');
     }
   };
+  
 
   const agregarTalla = async () => {
-    if (!nuevaTalla.trim()) return; // Evitar agregar tallas vacías
+    if (!nuevaTalla.trim()) return; 
 
     const { data, error } = await supabase
         .from('tallas')
         .insert([{ nombre: nuevaTalla.trim() }])
-        .select(); // Asegúrate de que la respuesta incluya la nueva talla
+        .select();
 
     if (error) {
         console.error('Error al agregar la talla:', error);
@@ -111,7 +114,6 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
         return;
     }
 
-    // Verifica si data tiene algún elemento antes de acceder a él
     if (data && data.length > 0) {
         setTallasDisponibles([...tallasDisponibles, data[0]]);
         setMensaje(`Talla "${nuevaTalla}" agregada exitosamente.`);
@@ -122,15 +124,12 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
     }
 };
 
-  const eliminarColor = async (colorId, colorValor) => {
-    const { error: errorRelacion } = await supabase
-      .from('productos_colores')
-      .delete()
-      .eq('color_id', colorId)
-      .eq('producto_id', valores.id);
+const eliminarColor = async (colorId, colorValor) => {
+  try {
+    const { error } = await supabase.from('colores').delete().eq('id', colorId);
 
-    if (errorRelacion) {
-      console.error('Error al eliminar la relación color-producto:', errorRelacion);
+    if (error) {
+      console.error('Error al eliminar el color:', error);
       setMensaje('Error al eliminar el color.');
       return;
     }
@@ -140,8 +139,12 @@ const FormularioGenerico = ({ titulo, campos, valores, setValores, onSubmit, onI
       ...valores,
       colores: (valores.colores || []).filter((c) => c !== colorValor),
     });
-    setMensaje(`Color "${colorValor}" eliminado.`);
-  };
+    setMensaje(`Color "${colorValor}" eliminado correctamente.`);
+  } catch (error) {
+    console.error('Error inesperado al eliminar el color:', error);
+    setMensaje('Ocurrió un error al intentar eliminar el color.');
+  }
+};
 
   const eliminarTalla = async (tallaId, tallaValor) => {
     const { error } = await supabase.from('tallas').delete().eq('id', tallaId);
