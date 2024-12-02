@@ -140,10 +140,8 @@ const GestionarProductos = () => {
   const actualizarProducto = async () => {
     if (!validarFormulario(modalConfig.producto)) return;
   
-    // Excluir la columna `id` antes de actualizar
     const { id, ...datosActualizados } = modalConfig.producto;
   
-    // Si hay una nueva imagen, obtén la URL pública
     if (imagen) {
       datosActualizados.img_url = await manejarImagen(imagen);
     }
@@ -151,7 +149,7 @@ const GestionarProductos = () => {
     try {
       const { error } = await supabase
         .from("productos")
-        .update(datosActualizados) // Enviar solo los datos necesarios
+        .update(datosActualizados) 
         .eq("id", id);
   
       if (error) {
@@ -160,7 +158,7 @@ const GestionarProductos = () => {
       }
   
       setModalConfig({ show: false, mode: "", producto: null });
-      cargarDatosIniciales(); // Recargar la lista de productos
+      cargarDatosIniciales(); 
     } catch (error) {
       console.error("Error al actualizar producto:", error);
     }
@@ -169,20 +167,32 @@ const GestionarProductos = () => {
   
 
   const eliminarProducto = async () => {
-    if (modalConfig.producto) {
+    if (!modalConfig.producto?.id) return;
+  
+    try {
       const { error } = await supabase
         .from("productos")
         .delete()
         .eq("id", modalConfig.producto.id);
-
+  
       if (error) {
-        console.error("Error al eliminar producto:", error);
-      } else {
-        setModalConfig({ show: false, mode: "", producto: null });
-        cargarDatosIniciales();
+        if (error.code === "23503") {
+          alert(
+            "No puedes eliminar este producto porque está asociado a pedidos. Elimina los pedidos relacionados antes de continuar."
+          );
+        } else {
+          console.error("Error al eliminar producto:", error);
+        }
+        return;
       }
+  
+      setModalConfig({ show: false, mode: "", producto: null });
+      cargarDatosIniciales(); // Actualizar la lista de productos
+    } catch (error) {
+      console.error("Error al eliminar producto:", error);
     }
   };
+  
 
   const camposProducto = [
     { nombre: "nombre", etiqueta: "Nombre", tipo: "text", error: errors.nombre },

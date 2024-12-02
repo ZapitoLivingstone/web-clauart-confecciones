@@ -4,8 +4,8 @@ import CardProductos from '../components/CardProductos';
 import BarraBusqueda from '../components/BarraBusqueda';
 import { supabase } from '../supabase';
 import Footer from '../components/Footer';
+import WhatsappBubble from '../components/WhatsappBubble'; // Importa la burbuja
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 
 const Inicio = () => {
   const [productos, setProductos] = useState([]);
@@ -45,7 +45,6 @@ const Inicio = () => {
   
     return coincideCategoria && coincideBusqueda;
   });
-  
 
   return (
     <>
@@ -65,11 +64,11 @@ const Inicio = () => {
         />
 
         <div className="card-product-container">
-        <CardProductos productos={productosFiltrados} />
+          <CardProductos productos={productosFiltrados} />
         </div>
-        
       </div>
       <Footer />
+      <WhatsappBubble /> {/* Agrega la burbuja */}
     </>
   );
 };
