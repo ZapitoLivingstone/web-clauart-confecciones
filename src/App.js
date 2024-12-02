@@ -10,6 +10,8 @@ import Inventario from './screens/Inventario';
 import Pedidos from './screens/Pedidos';
 import MiCuenta from './screens/MiCuenta';
 import MisPedidos from './screens/MisPedidos';
+import ResetPassword from './screens/ResetPassword';
+import UpdatePassword from './screens/UpdatePassword'; 
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
         <Route path="/Pedidos" element={<Pedidos />} />
         <Route path="/MiCuenta" element={<MiCuenta />} />
         <Route path="/MisPedidos" element={<MisPedidos />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} /> 
       </Routes>
     </Router>
   );

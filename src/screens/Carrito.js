@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase'; // Asegúrate de tener la configuración de Supabase
+import { supabase } from '../supabase';
+import { useNavigate } from 'react-router-dom'; 
 import Header from '../components/Header';
 import ModalGenerico from '../components/ModalGenerico';
+import Footer from '../components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Carrito = () => {
   const [cartItems, setCartItems] = useState([]);
   const [editItem, setEditItem] = useState(null);
-  const [modalAction, setModalAction] = useState(''); // "edit" o "delete"
+  const [modalAction, setModalAction] = useState('');
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleError = (error, mensaje) => {
     console.error(mensaje, error);
@@ -19,14 +22,12 @@ const Carrito = () => {
   const cargarCarrito = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('carrito')
-        .select('*');
+      const { data, error } = await supabase.from('carrito').select('*');
 
       if (error) throw error;
       setCartItems(data);
     } catch (error) {
-      handleError(error, "Error al cargar el carrito");
+      handleError(error, 'Error al cargar el carrito');
     } finally {
       setIsLoading(false);
     }
@@ -37,65 +38,59 @@ const Carrito = () => {
   }, [cargarCarrito]);
 
   const confirmOrder = async () => {
-    const { data: { session }, error } = await supabase.auth.getSession(); // Obteniendo la sesión actual
+    const { data: { session }, error } = await supabase.auth.getSession();
     if (error) {
-      handleError(error, "Error al obtener la sesión");
+      handleError(error, 'Error al obtener la sesión');
       return;
     }
-    
-    const user = session?.user; // Accediendo al usuario desde la sesión
-    
+
+    const user = session?.user;
+
     if (!user) {
       alert('Debes iniciar sesión para realizar un pedido');
       return;
     }
-  
+
     if (cartItems.length === 0) {
       alert('El carrito está vacío');
       return;
     }
-  
+
     setIsLoading(true);
     try {
       const pedidosPromises = cartItems.map(async (item) => {
         const pedidoData = {
           usuarioId: user.id,
-          producto_id: item.producto_id, // FK a productos
+          producto_id: item.producto_id,
           color: item.color,
           size: item.size,
-          cantidad: item.cantidad || 1, // Asignar un valor por defecto si cantidad es null o undefined
+          cantidad: item.cantidad || 1,
           precio: item.precio,
           fechaPedido: new Date().toISOString(),
           estado: 'pendiente',
         };
-  
-        const { data: pedidoDataResponse, error } = await supabase
-          .from('pedidos')
-          .insert([pedidoData]);
-  
+
+        const { error } = await supabase.from('pedidos').insert([pedidoData]);
+
         if (error) throw error;
-  
-        // Eliminar del carrito
+
         const { error: deleteError } = await supabase
           .from('carrito')
           .delete()
           .match({ id: item.id });
-  
+
         if (deleteError) throw deleteError;
-  
-        return pedidoDataResponse;
       });
-  
+
       await Promise.all(pedidosPromises);
-      setCartItems([]); // Vaciar el carrito
+      setCartItems([]);
       setOrderConfirmed(true);
-  
+
       setTimeout(() => {
-        setOrderConfirmed(false);
-      }, 3000);
-  
+        navigate('/MisPedidos'); 
+      }, 1000); 
     } catch (error) {
-      handleError(error, "Error al procesar el pedido");
+      handleError(error, 'Error al procesar el pedido');
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +145,6 @@ const Carrito = () => {
 
       if (error) throw error;
 
-      // Actualiza el carrito en la UI
       setCartItems((prevItems) => prevItems.filter((item) => item.id !== editItem.id));
       setEditItem(null);
       setModalAction('');
@@ -187,16 +181,16 @@ const Carrito = () => {
                       <td>{item.cantidad || 1}</td>
                       <td>${item.precio}</td>
                       <td>
-                        <button 
-                          type="button" 
-                          className="btn btn-warning me-2" 
+                        <button
+                          type="button"
+                          className="btn btn-warning me-2"
                           onClick={() => openEditModal(item)}
                         >
                           Editar
                         </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-danger" 
+                        <button
+                          type="button"
+                          className="btn btn-danger"
                           onClick={() => openDeleteModal(item)}
                         >
                           Eliminar
@@ -206,14 +200,18 @@ const Carrito = () => {
                   ))}
                 </tbody>
               </table>
-              <button 
-                type="button" 
-                className="btn btn-primary mt-3" 
+              <button
+                type="button"
+                className="btn btn-primary mt-3"
                 onClick={confirmOrder}
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                 ) : null}
                 {isLoading ? 'Procesando...' : 'Confirmar Pedido'}
               </button>
@@ -228,6 +226,7 @@ const Carrito = () => {
           <p>No hay items en el carrito.</p>
         )}
       </div>
+      <Footer />
 
       <ModalGenerico
         show={modalAction !== ''}
@@ -242,23 +241,23 @@ const Carrito = () => {
         {modalAction === 'edit' ? (
           <div>
             <label>Color:</label>
-            <input 
-              type="text" 
-              value={editItem?.color || ''} 
+            <input
+              type="text"
+              value={editItem?.color || ''}
               onChange={(e) => setEditItem({ ...editItem, color: e.target.value })}
               className="form-control mb-2"
             />
             <label>Tamaño:</label>
-            <input 
-              type="text" 
-              value={editItem?.size || ''} 
+            <input
+              type="text"
+              value={editItem?.size || ''}
               onChange={(e) => setEditItem({ ...editItem, size: e.target.value })}
               className="form-control mb-2"
             />
             <label>Cantidad:</label>
-            <input 
-              type="number" 
-              value={editItem?.cantidad || 1} 
+            <input
+              type="number"
+              value={editItem?.cantidad || 1}
               onChange={(e) => setEditItem({ ...editItem, cantidad: parseInt(e.target.value) })}
               className="form-control"
             />
@@ -267,6 +266,7 @@ const Carrito = () => {
           <p>¿Estás seguro de que deseas eliminar este item del carrito?</p>
         )}
       </ModalGenerico>
+
     </>
   );
 };

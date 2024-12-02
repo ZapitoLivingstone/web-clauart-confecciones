@@ -88,7 +88,6 @@ const DetalleProducto = () => {
       if (error) {
         handleError(error, "Error al agregar al carrito");
       } else {
-        alert('Producto agregado al carrito exitosamente');
         setColor('');
         setSize('');
         setCustomText('');

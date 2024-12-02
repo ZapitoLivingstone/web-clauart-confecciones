@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabase';  // Importa tu instancia de supabase
+import { supabase } from '../supabase';  
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const MisPedidos = () => {
@@ -20,23 +21,22 @@ const MisPedidos = () => {
 
       if (user) {
         try {
-          // Realiza la consulta con el id del usuario y agrega el join con la tabla productos
           const { data, error } = await supabase
-            .from('pedidos')  // Reemplaza 'pedidos' por el nombre de tu tabla en Supabase
-            .select('*, productos(nombre)')  // Obtén el nombre del producto relacionado
-            .eq('usuarioId', user.id);  // Asegúrate de que el campo en Supabase se llame 'usuario_id'
+            .from('pedidos') 
+            .select('*, productos(nombre)')  
+            .eq('usuarioId', user.id);  
 
           if (error) throw error;
 
           const pedidosData = data.map((pedido) => ({
             id: pedido.id,
-            nombreProducto: pedido.productos ? pedido.productos.nombre : 'Desconocido', // Obtén el nombre del producto
+            nombreProducto: pedido.productos ? pedido.productos.nombre : 'Desconocido', 
             descripcion: pedido.descripcion,
             color: pedido.color,
             customText: pedido.custom_text || 'N/A',
             size: pedido.size,
             precio: pedido.precio,
-            fechaPedido: formatFechaPedido(pedido.fechaPedido),  // Ajusta el campo de la fecha si es necesario
+            fechaPedido: formatFechaPedido(pedido.fechaPedido), 
             estado: pedido.estado,
           }));
 
@@ -57,7 +57,7 @@ const MisPedidos = () => {
 
   const formatFechaPedido = (fechaPedido) => {
     if (fechaPedido) {
-      return new Date(fechaPedido).toLocaleDateString();  // Ajusta si 'fechaPedido' está en formato timestamp
+      return new Date(fechaPedido).toLocaleDateString(); 
     }
     return 'Fecha no disponible';
   };
@@ -107,6 +107,7 @@ const MisPedidos = () => {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 };

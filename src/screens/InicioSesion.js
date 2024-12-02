@@ -121,7 +121,7 @@ const InicioSesion = () => {
             </button>
 
             <p className="text-center mt-3">
-              <Link to="/OlvidoContrasena" className="text-primary">¿Olvidó su contraseña?</Link>
+              <Link to="/reset-password" className="text-primary">¿Olvidó su contraseña?</Link>
             </p>
             <p className="text-center mt-3">
               ¿No tienes cuenta? <Link to="/Registro" className="text-primary">Regístrate aquí</Link>
