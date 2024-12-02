@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase'; 
 import Header from '../components/Header';
-import Footer from '../components/Footer';
 import '../styles/DetalleProducto.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -195,7 +194,6 @@ const DetalleProducto = () => {
           <p className="text-center">No se encontró información del producto.</p>
         )}
       </div>
-      <Footer />
     </>
   );
 };

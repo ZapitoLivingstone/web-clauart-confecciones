@@ -38,21 +38,21 @@ const GestionarCategorias = () => {
   const handleAgregar = async (e) => {
     e.preventDefault();
     if (!validarFormulario()) return;
-
+  
     const nuevaCategoria = { nombre: valores.nombre.trim(), descripcion: valores.descripcion.trim() };
-
-    const { error } = await supabase.from('categorias').insert([nuevaCategoria]);
-
+  
+    const { data, error } = await supabase.from("categorias").insert([nuevaCategoria]).select();
     if (error) {
-      console.error('Error al agregar categoría:', error);
+      console.error("Error al agregar categoría:", error);
       return;
     }
-
-    setCategorias([...categorias, nuevaCategoria]);
-    setValores({ nombre: '', descripcion: '' });
+  
+    setCategorias((prev) => [...prev, ...data]); // Agregar la nueva categoría al estado local
+    setValores({ nombre: "", descripcion: "" });
     setErrors({});
     setShowModal(false);
   };
+  
 
   const handleEditar = (categoria) => {
     setValores({ nombre: categoria.nombre, descripcion: categoria.descripcion });
@@ -83,22 +83,20 @@ const GestionarCategorias = () => {
   };
 
   const handleEliminar = async () => {
-    console.log('Eliminando categoría con ID:', selectedCategoria?.id);  // Agregar un log para verificar
-    if (!selectedCategoria?.id) {
-      console.error('ID de categoría no disponible');
-      return;
-    }
+    if (!selectedCategoria?.id) return;
   
-    const { error } = await supabase.from('categorias').delete().eq('id', selectedCategoria.id);
+    const { error } = await supabase.from("categorias").delete().eq("id", selectedCategoria.id);
     if (error) {
-      console.error('Error al eliminar categoría:', error);
+      console.error("Error al eliminar categoría:", error);
       return;
     }
   
-    setCategorias(categorias.filter(cat => cat.id !== selectedCategoria.id));
+    setCategorias((prev) => prev.filter((cat) => cat.id !== selectedCategoria.id));
     setShowModal(false);
     setSelectedCategoria(null);
   };
+  
+  
   
 
   const handleOpenDeleteModal = (categoria) => {

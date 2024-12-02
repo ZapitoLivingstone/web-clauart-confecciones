@@ -59,18 +59,16 @@ const GestionarProductos = () => {
     }
   };
 
-  const validarFormulario = () => {
+  const validarFormulario = (valores) => {
     const nuevosErrores = {
-      nombre: Validaciones.texto(nuevoProducto.nombre, "Nombre"),
-      precio: Validaciones.precio(nuevoProducto.precio),
-      categoria: Validaciones.seleccion(
-        nuevoProducto.categorias_id,
-        "Categoría"
-      ),
+      nombre: Validaciones.texto(valores?.nombre || '', "Nombre"),
+      precio: Validaciones.precio(valores?.precio || ''),
+      categoria: Validaciones.seleccion(valores?.categorias_id || '', "Categoría"),
     };
     setErrors(nuevosErrores);
     return !Object.values(nuevosErrores).some((error) => error);
   };
+  
 
   const manejarImagen = async (imagen) => {
     if (!imagen) return "";
@@ -140,28 +138,35 @@ const GestionarProductos = () => {
   };
 
   const actualizarProducto = async () => {
-    if (!validarFormulario()) return;
-
-    const productoActualizado = { ...modalConfig.producto };
+    if (!validarFormulario(modalConfig.producto)) return;
+  
+    // Excluir la columna `id` antes de actualizar
+    const { id, ...datosActualizados } = modalConfig.producto;
+  
+    // Si hay una nueva imagen, obtén la URL pública
     if (imagen) {
-      productoActualizado.img_url = await manejarImagen(imagen);
+      datosActualizados.img_url = await manejarImagen(imagen);
     }
-
-    const { error } = await supabase
-      .from("productos")
-      .update({
-        ...productoActualizado,
-      })
-      .eq("id", productoActualizado.id);
-
-    if (error) {
+  
+    try {
+      const { error } = await supabase
+        .from("productos")
+        .update(datosActualizados) // Enviar solo los datos necesarios
+        .eq("id", id);
+  
+      if (error) {
+        console.error("Error al actualizar producto:", error);
+        return;
+      }
+  
+      setModalConfig({ show: false, mode: "", producto: null });
+      cargarDatosIniciales(); // Recargar la lista de productos
+    } catch (error) {
       console.error("Error al actualizar producto:", error);
-      return;
     }
-
-    setModalConfig({ show: false, mode: "", producto: null });
-    cargarDatosIniciales();
   };
+  
+  
 
   const eliminarProducto = async () => {
     if (modalConfig.producto) {
