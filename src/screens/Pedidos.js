@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import HeaderAdmin from '../components/HeaderAdmin';
-import { supabase } from '../supabase'; // Importamos el cliente de Supabase
+import { supabase } from '../supabase';
 import ModalGenerico from '../components/ModalGenerico';
 import BarraBusqueda from '../components/BarraBusqueda';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '../styles/CardPedido.css';
+
 
 const Pedidos = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -31,24 +33,28 @@ const Pedidos = () => {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        // Obtener pedidos desde Supabase
+        // Obtener pedidos con el nombre del producto
         const { data: pedidosData, error: pedidosError } = await supabase
           .from('pedidos')
-          .select('*');
+          .select(`
+            *,
+            productos(nombre)
+          `);
         if (pedidosError) throw pedidosError;
-
+  
         const pedidosConFecha = pedidosData.map((pedido) => ({
           ...pedido,
+          nombreProducto: pedido.productos?.nombre || 'Producto desconocido',
           fecha: formatDate(pedido.fechaPedido),
         }));
         setPedidos(pedidosConFecha);
-
+  
         // Obtener usuarios desde Supabase
         const { data: usuariosData, error: usuariosError } = await supabase
           .from('usuarios')
           .select('*');
         if (usuariosError) throw usuariosError;
-
+  
         const usuariosMap = usuariosData.reduce((acc, user) => {
           acc[user.id] = user;
           return acc;
@@ -58,10 +64,10 @@ const Pedidos = () => {
         console.error('Error al cargar los datos:', error);
       }
     };
-
+  
     cargarDatos();
   }, []);
-
+  
   const actualizarEstadoPedido = async (docId, nuevoEstado) => {
     try {
       const { error } = await supabase

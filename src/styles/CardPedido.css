@@ -1,0 +1,49 @@
+.card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+  
+  .card-text {
+    font-size: 0.95rem;
+    color: #555;
+  }
+  
+  .mb-3 label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  
+  .form-select {
+    font-size: 0.9rem;
+    border-radius: 6px;
+  }
+  
+  .btn-danger {
+    background-color: #e63946;
+    border-color: #e63946;
+  }
+  
+  .btn-danger:hover {
+    background-color: #d62828;
+    border-color: #d62828;
+  }
+  
