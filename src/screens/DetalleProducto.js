@@ -37,7 +37,8 @@ const DetalleProducto = () => {
           setProducto(data);
         }
       } catch (error) {
-        handleError(error, "Error al obtener el producto");
+        console.error("Error al obtener el producto", error);
+        setError("Error al obtener el producto. Por favor, intenta nuevamente.");
       } finally {
         setLoading(false);
       }
@@ -45,11 +46,6 @@ const DetalleProducto = () => {
 
     fetchProducto();
   }, [productoId]);
-
-  const handleError = (error, mensaje) => {
-    console.error(mensaje, error);
-    alert(`${mensaje}. Por favor, intenta nuevamente.`);
-  };
 
   const validarProducto = () => {
     if (!color) {
@@ -65,40 +61,47 @@ const DetalleProducto = () => {
 
   const agregarAlCarrito = async () => {
     if (!producto || !validarProducto()) return;
-
+  
     setIsLoading(true);
-
-    const productoPersonalizado = {
-      producto_id: producto.id,
-      nombre: producto.nombre,
-      descripcion: producto.descripcion,
-      precio: producto.precio,
-      color,
-      size,
-      custom_text: customText,
-      fecha_agregado: new Date(), 
-      img_url: producto.img_url
-    };
-
+  
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser(); // Obtener el usuario autenticado
+      if (userError || !user) {
+        alert("Debes iniciar sesión para agregar productos al carrito.");
+        return;
+      }
+  
+      const productoCarrito = {
+        usuario_id: user.id, 
+        producto_id: producto.id,
+        color,
+        talla: size,
+        texto_personalizado: customText || null, 
+        cantidad: 1, 
+      };
+  
       const { error } = await supabase
         .from('carrito')
-        .insert([productoPersonalizado]);
-
+        .insert([productoCarrito]);
+  
       if (error) {
-        handleError(error, "Error al agregar al carrito");
+        console.error("Error al agregar al carrito", error);
+        alert("Error al agregar al carrito. Por favor, intenta nuevamente.");
       } else {
         setColor('');
         setSize('');
         setCustomText('');
-        navigate('/carrito');
+        navigate('/carrito'); 
       }
     } catch (error) {
-      handleError(error, "Error al agregar al carrito");
+      console.error("Error al agregar al carrito", error);
+      alert("Error inesperado. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
   };
+  
+  
 
   if (loading) return <div className="text-center my-5">Cargando producto...</div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
@@ -125,11 +128,11 @@ const DetalleProducto = () => {
               
               <div className="mb-3">
                 <strong>Colores Disponibles:</strong> 
-                <p>{producto.colores ? producto.colores.join(', ') : 'No disponibles'}</p>
+                <p>{producto.colores?.join(', ') || 'No disponibles'}</p>
               </div>
               <div className="mb-3">
                 <strong>Tallas Disponibles:</strong> 
-                <p>{producto.tallas ? producto.tallas.join(', ') : 'No disponibles'}</p>
+                <p>{producto.tallas?.join(', ') || 'No disponibles'}</p>
               </div>
 
               <div className="customization-section">
@@ -180,9 +183,6 @@ const DetalleProducto = () => {
                     onClick={agregarAlCarrito}
                     disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    ) : null}
                     {isLoading ? 'Agregando...' : 'Agregar al Carrito'}
                   </button>
                 </form>

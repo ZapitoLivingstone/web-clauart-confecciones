@@ -22,16 +22,48 @@ const Carrito = () => {
   const cargarCarrito = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('carrito').select('*');
-
+      // Obtén la sesión de Supabase
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+  
+      const user = session?.user;
+      if (!user) {
+        alert('Debes iniciar sesión para ver el carrito');
+        setIsLoading(false);
+        return;
+      }
+  
+      const { data, error } = await supabase
+        .from('carrito')
+        .select(`
+          id, 
+          producto_id, 
+          productos(nombre, img_url, precio), 
+          color, 
+          size, 
+          cantidad, 
+          texto_personalizado
+        `)
+        .eq('usuario_id', user.id); // Filtro por usuario logueado
+  
       if (error) throw error;
-      setCartItems(data);
+  
+      const items = data.map((item) => ({
+        ...item,
+        nombre: item.productos.nombre,
+        img_url: item.productos.img_url,
+        precio: item.productos.precio,
+      }));
+  
+      setCartItems(items);
     } catch (error) {
       handleError(error, 'Error al cargar el carrito');
     } finally {
       setIsLoading(false);
     }
   }, []);
+  
+  
 
   useEffect(() => {
     cargarCarrito();
@@ -162,43 +194,52 @@ const Carrito = () => {
           <div className="row">
             <div className="col-md-12">
               <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Color</th>
-                    <th>Tamaño</th>
-                    <th>Cantidad</th>
-                    <th>Precio</th>
-                    <th>Acciones</th>
+              <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>Producto</th>
+                <th>Color</th>
+                <th>Tamaño</th>
+                <th>Texto Personalizado</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+              </tr>
+              </thead>
+              <tbody>
+                {cartItems.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <img
+                        src={item.img_url}
+                        alt={item.nombre}
+                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                      />
+                    </td>
+                    <td>{item.nombre}</td>
+                    <td>{item.color}</td>
+                    <td>{item.size}</td>
+                    <td>{item.texto_personalizado || 'N/A'}</td>
+                    <td>${item.precio}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-warning me-2"
+                        onClick={() => openEditModal(item)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => openDeleteModal(item)}
+                      >
+                        Eliminar
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {cartItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.nombre}</td>
-                      <td>{item.color}</td>
-                      <td>{item.size}</td>
-                      <td>{item.cantidad || 1}</td>
-                      <td>${item.precio}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-warning me-2"
-                          onClick={() => openEditModal(item)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          onClick={() => openDeleteModal(item)}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                ))}
+              </tbody>
+
               </table>
               <button
                 type="button"
@@ -247,24 +288,17 @@ const Carrito = () => {
               onChange={(e) => setEditItem({ ...editItem, color: e.target.value })}
               className="form-control mb-2"
             />
-            <label>Tamaño:</label>
-            <input
-              type="text"
-              value={editItem?.size || ''}
-              onChange={(e) => setEditItem({ ...editItem, size: e.target.value })}
-              className="form-control mb-2"
-            />
-            <label>Cantidad:</label>
-            <input
-              type="number"
-              value={editItem?.cantidad || 1}
-              onChange={(e) => setEditItem({ ...editItem, cantidad: parseInt(e.target.value) })}
+            <label>Texto Personalizado:</label>
+            <textarea
+              value={editItem?.texto_personalizado || ''}
+              onChange={(e) => setEditItem({ ...editItem, texto_personalizado: e.target.value })}
               className="form-control"
             />
           </div>
         ) : (
           <p>¿Estás seguro de que deseas eliminar este item del carrito?</p>
         )}
+
       </ModalGenerico>
 
     </>
