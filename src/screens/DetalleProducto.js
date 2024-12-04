@@ -75,10 +75,11 @@ const DetalleProducto = () => {
         usuario_id: user.id, 
         producto_id: producto.id,
         color,
-        talla: size,
+        size: size, 
         texto_personalizado: customText || null, 
         cantidad: 1, 
       };
+      
   
       const { error } = await supabase
         .from('carrito')
@@ -166,6 +167,7 @@ const DetalleProducto = () => {
                       ))}
                     </select>
                   </div>
+
                   <div className="form-group mb-3">
                     <label htmlFor="text">Texto Personalizado</label>
                     <input 
